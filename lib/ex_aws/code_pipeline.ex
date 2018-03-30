@@ -17,6 +17,9 @@ defmodule ExAws.CodePipeline do
           {:next_token, binary},
           {:pipeline_name, binary}
         ]
+  @type get_pipeline_options :: [
+          {:version, binary}
+        ]
 
   @key_spec %{
     max_results: "maxResults",
@@ -39,6 +42,73 @@ defmodule ExAws.CodePipeline do
   def acknowledge_third_party_job(client_token, job_id, nonce) do
     %{"clientToken" => client_token, "jobId" => job_id, "nonce" => nonce}
     |> request(:acknowledge_third_party_job)
+  end
+
+  @doc """
+    Marks a custom action as deleted.
+
+    poll_for_jobs for the custom action will fail after the action
+    is marked for deletion. Only used for custom actions.
+  """
+  @spec delete_custom_action_type(category :: binary, provider :: binary, version :: binary) ::
+          ExAws.Operation.JSON.t()
+  def delete_custom_action_type(category, provider, version) do
+    %{"category" => category, "provider" => provider, "version" => version}
+    |> request(:delete_custom_action_type)
+  end
+
+  @doc """
+    Deletes the specified pipeline.
+  """
+  @spec delete_pipeline(name :: binary) :: ExAws.Operation.JSON.t()
+  def delete_pipeline(name) do
+    %{"name" => name}
+    |> request(:delete_pipeline)
+  end
+
+  @doc """
+    deletes a web hook.
+  """
+  @spec delete_webhook(name :: binary) :: ExAws.Operation.JSON.t()
+  def delete_webhook(name) do
+    %{"name" => name}
+    |> request(:delete_webhook)
+  end
+
+  @doc """
+    Prevents artifacts in a pipeline from transitioning to the next stage in the pipeline.
+  """
+  @spec disable_stage_transition(
+          pipeline_name :: binary,
+          stage_name :: binary,
+          transition_type :: binary,
+          reason :: binary
+        ) :: ExAws.Operation.JSON.t()
+  def disable_stage_transition(pipeline_name, stage_name, transition_type, reason) do
+    %{
+      "pipelineName" => pipeline_name,
+      "stageName" => stage_name,
+      "transitionType" => transition_type,
+      "reason" => reason
+    }
+    |> request(:disable_stage_transition)
+  end
+
+  @doc """
+    Enables artifacts in a pipeline to transition to a stage in a pipeline.
+  """
+  @spec enable_stage_transition(
+          pipeline_name :: binary,
+          stage_name :: binary,
+          transition_type :: binary
+        ) :: ExAws.Operation.JSON.t()
+  def enable_stage_transition(pipeline_name, stage_name, transition_type) do
+    %{
+      "pipelineName" => pipeline_name,
+      "stageName" => stage_name,
+      "transitionType" => transition_type
+    }
+    |> request(:disable_stage_transition)
   end
 
   @doc """
@@ -71,6 +141,8 @@ defmodule ExAws.CodePipeline do
     with update_pipeline.
 
   """
+  @spec get_pipeline(name :: binary) :: ExAws.Operation.JSON.t()
+  @spec get_pipeline(name :: binary, opts :: get_pipeline_options) :: ExAws.Operation.JSON.t()
   def get_pipeline(name, opts \\ []) do
     opts |> camelize_keys(spec: @key_spec) |> Map.merge(%{"name" => name})
     |> request(:get_pipeline)
@@ -95,6 +167,19 @@ defmodule ExAws.CodePipeline do
   def get_pipeline_state(name) do
     %{"name" => name}
     |> request(:get_pipeline_state)
+  end
+
+  @doc """
+    Requests the details of a job for a third party action. Only used for partner actions.
+
+    IMPORTANT: When this API is called, AWS CodePipeline returns temporary credentials
+    for the Amazon S3 bucket used to store artifacts for the pipeline, if the action
+    requires access to that Amazon S3 bucket for input or output artifacts. Additionally,
+    this API returns any secret values defined for the action.
+  """
+  def get_third_party_job_details(job_id, client_token) do
+    %{"jobId" => job_id, "clientToken" => client_token}
+    |> request(:get_third_party_job_details)
   end
 
   defp request(data, action, opts \\ %{}) do
