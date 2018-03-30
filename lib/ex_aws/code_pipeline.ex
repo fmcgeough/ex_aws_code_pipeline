@@ -6,7 +6,7 @@ defmodule ExAws.CodePipeline do
 
   @version "20150709"
   @namespace "CodePipeline"
-  import ExAws.Utils, only: [camelize_keys: 1, camelize_keys: 2]
+  import ExAws.Utils, only: [camelize_keys: 2]
 
   @type paging_options :: [
           {:next_token, binary}
@@ -41,17 +41,60 @@ defmodule ExAws.CodePipeline do
     |> request(:acknowledge_third_party_job)
   end
 
+  @doc """
+    Gets a summary of all of the pipelines associated with your account.
+  """
   @spec list_pipelines() :: ExAws.Operation.JSON.t()
   @spec list_pipelines(opts :: paging_options) :: ExAws.Operation.JSON.t()
   def list_pipelines(opts \\ []) do
-    opts |> camelize_keys() |> request(:list_pipelines)
+    opts |> camelize_keys(spec: @key_spec) |> request(:list_pipelines)
   end
 
-  @spec list_pipeline_executions() :: ExAws.Operation.JSON.t()
-  @spec list_pipeline_executions(opts :: list_pipeline_executions_options) ::
+  @doc """
+    Gets a summary of the most recent executions for a pipeline.
+  """
+  @spec list_pipeline_executions(pipeline_name :: binary) :: ExAws.Operation.JSON.t()
+  @spec list_pipeline_executions(
+          pipeline_name :: binary,
+          opts :: list_pipeline_executions_options
+        ) :: ExAws.Operation.JSON.t()
+  def list_pipeline_executions(pipeline_name, opts \\ []) do
+    opts |> camelize_keys(spec: @key_spec) |> Map.merge(%{"pipelineName" => pipeline_name})
+    |> request(:list_pipeline_executions)
+  end
+
+  @doc """
+    Returns the metadata, structure, stages, and actions of a pipeline.
+
+    Can be used to return the entire structure of a pipeline in JSON format,
+    which can then be modified and used to update the pipeline structure
+    with update_pipeline.
+
+  """
+  def get_pipeline(name, opts \\ []) do
+    opts |> camelize_keys(spec: @key_spec) |> Map.merge(%{"name" => name})
+    |> request(:get_pipeline)
+  end
+
+  @doc """
+    Returns information about an execution of a pipeline, including details
+    about artifacts, the pipeline execution ID, and the name, version, and
+    status of the pipeline.
+  """
+  @spec get_pipeline_execution(pipeline_name :: binary, pipeline_execution_id :: binary) ::
           ExAws.Operation.JSON.t()
-  def list_pipeline_executions(opts \\ []) do
-    opts |> camelize_keys(@key_spec) |> request(:list_pipeline_executions)
+  def get_pipeline_execution(pipeline_name, pipeline_execution_id) do
+    %{"pipelineExecutionId" => pipeline_execution_id, "pipelineName" => pipeline_name}
+    |> request(:get_pipeline_execution)
+  end
+
+  @doc """
+    Returns information about the state of a pipeline, including the stages and actions.
+  """
+  @spec get_pipeline_state(name :: binary) :: ExAws.Operation.JSON.t()
+  def get_pipeline_state(name) do
+    %{"name" => name}
+    |> request(:get_pipeline_state)
   end
 
   defp request(data, action, opts \\ %{}) do
