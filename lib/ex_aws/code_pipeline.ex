@@ -8,6 +8,9 @@ defmodule ExAws.CodePipeline do
   @namespace "CodePipeline"
   import ExAws.Utils, only: [camelize_keys: 2]
 
+  @typedoc """
+    Used generically to define a paging next_token
+  """
   @type paging_options :: [
           {:next_token, binary}
         ]
@@ -21,10 +24,21 @@ defmodule ExAws.CodePipeline do
           {:version, binary}
         ]
 
+  @type approval_result :: %{status: binary, summary: binary}
+
+  @type failure_details_options :: [
+          {:external_execution_id, binary},
+          {:message, binary},
+          {:type, binary}
+        ]
+
   @key_spec %{
     max_results: "maxResults",
     next_token: "nextToken",
-    pipeline_name: "pipelineName"
+    pipeline_name: "pipelineName",
+    external_execution_id: "externalExecutionId",
+    message: "message",
+    type: "type"
   }
 
   @doc """
@@ -180,6 +194,39 @@ defmodule ExAws.CodePipeline do
   def get_third_party_job_details(job_id, client_token) do
     %{"jobId" => job_id, "clientToken" => client_token}
     |> request(:get_third_party_job_details)
+  end
+
+  @doc """
+    Provides the response to a manual approval request to AWS CodePipeline. Valid responses include Approved and Rejected.
+  """
+  @spec put_approval_result(
+          pipeline_name :: binary,
+          stage_name :: binary,
+          action_name :: binary,
+          token :: binary,
+          result :: approval_result
+        ) :: ExAws.Operation.JSON.t()
+  def put_approval_result(pipeline_name, stage_name, action_name, token, result) do
+    %{
+      "pipelineName" => pipeline_name,
+      "actionName" => action_name,
+      "stageName" => stage_name,
+      "token" => token,
+      "result" => %{"status" => result.status, "summary" => result.summary}
+    }
+    |> request(:put_approval_result)
+  end
+
+  @doc """
+    Represents the failure of a job as returned to the pipeline by a job worker. Only used for custom actions.
+  """
+  @spec put_job_failure_result(job_id :: binary, failure_details :: failure_details_options) ::
+          ExAws.Operation.JSON.t()
+  def put_job_failure_result(job_id, failure_details) do
+    details = camelize_keys(failure_details, spec: @key_spec)
+
+    %{"jobId" => job_id, "failureDetails" => details}
+    |> request(:put_job_failure_result)
   end
 
   defp request(data, action, opts \\ %{}) do
