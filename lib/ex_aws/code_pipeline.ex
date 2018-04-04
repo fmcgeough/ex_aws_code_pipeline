@@ -12,24 +12,24 @@ defmodule ExAws.CodePipeline do
     Used generically to define a paging next_token
   """
   @type paging_options :: [
-          {:next_token, binary}
+          next_token: binary
         ]
 
   @type list_pipeline_executions_options :: [
-          {:max_results, binary},
-          {:next_token, binary},
-          {:pipeline_name, binary}
+          max_results: binary,
+          next_token: binary,
+          pipeline_name: binary
         ]
   @type get_pipeline_options :: [
-          {:version, binary}
+          version: binary
         ]
 
   @type approval_result :: %{status: binary, summary: binary}
 
   @type failure_details_options :: [
-          {:external_execution_id, binary},
-          {:message, binary},
-          {:type, binary}
+          external_execution_id: binary,
+          message: binary,
+          type: binary
         ]
 
   @key_spec %{
