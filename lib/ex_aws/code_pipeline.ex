@@ -6,7 +6,6 @@ defmodule ExAws.CodePipeline do
 
   @version "20150709"
   @namespace "CodePipeline"
-  import ExAws.Utils, only: [camelize_keys: 2]
 
   @typedoc """
     Used generically to define a paging next_token
@@ -32,19 +31,86 @@ defmodule ExAws.CodePipeline do
           type: binary
         ]
 
-  @key_spec %{
-    max_results: "maxResults",
-    next_token: "nextToken",
-    pipeline_name: "pipelineName",
-    external_execution_id: "externalExecutionId",
-    message: "message",
-    type: "type"
-  }
+  @type action_configuration_property :: [
+          description: binary,
+          key: boolean,
+          name: binary,
+          queryable: boolean,
+          required: boolean,
+          secret: boolean,
+          type: binary
+        ]
 
+  @type action_type_setting :: [
+          entity_url_template: binary,
+          execution_url_template: binary,
+          revision_url_template: binary,
+          third_party_configuration_url: binary
+        ]
+
+  @type artifact_details :: [
+          minimum_count: integer,
+          maximum_count: integer
+        ]
+
+  @type encryption_key :: [
+          type: binary,
+          id: binary
+        ]
+
+  @type artifact_store :: %{
+          encryption_key: encryption_key,
+          location: binary,
+          type: binary
+        }
+
+  @type action_type_id :: %{
+          category: binary,
+          owner: binary,
+          provider: binary,
+          version: binary
+        }
+
+  @type input_artifact :: %{
+          name: binary
+        }
+
+  @type block_declaration :: %{
+          name: binary,
+          type: binary
+        }
+
+  @type action_declaration :: %{
+          action_type_id: action_type_id,
+          configuration: map,
+          input_artifacts: [input_artifact, ...],
+          name: binary,
+          output_artificats: [binary, ...],
+          region: binary,
+          role_arn: binary,
+          run_order: integer,
+          blockers: [block_declaration, ...]
+        }
+
+  @type stage_declaration :: [
+          actions: [action_declaration, ...]
+        ]
   @doc """
     Returns information about a specified job and whether that job has
     been received by the job worker. Only used for custom actions.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.acknowledge_job("f4f4ff82-2d11-EXAMPLE", "3")
+        iex> op.data
+        %{"jobId" => "f4f4ff82-2d11-EXAMPLE", "nonce" => "3"}
+        iex> op.headers
+        [
+        {"x-amz-target", "CodePipeline_20150709.AcknowledgeJob"},
+        {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
+  @spec acknowledge_job(job_id :: binary, nonce :: binary) :: ExAws.Operation.JSON.t()
   def acknowledge_job(job_id, nonce) do
     %{"jobId" => job_id, "nonce" => nonce}
     |> request(:acknowledge_job)
@@ -52,10 +118,65 @@ defmodule ExAws.CodePipeline do
 
   @doc """
     Confirms a job worker has received the specified job. Only used for partner actions.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.acknowledge_third_party_job("ABCXYZ", "f4f4ff82-2d11-EXAMPLE", "3")
+        iex> op.data
+        %{
+        "clientToken" => "ABCXYZ",
+        "jobId" => "f4f4ff82-2d11-EXAMPLE",
+        "nonce" => "3"
+        }
+        iex> op.headers
+        [
+        {"x-amz-target", "CodePipeline_20150709.AcknowledgeThirdPartyJob"},
+        {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
+  @spec acknowledge_third_party_job(client_token :: binary, job_id :: binary, nonce :: binary) ::
+          ExAws.Operation.JSON.t()
   def acknowledge_third_party_job(client_token, job_id, nonce) do
     %{"clientToken" => client_token, "jobId" => job_id, "nonce" => nonce}
     |> request(:acknowledge_third_party_job)
+  end
+
+  @doc """
+  """
+  @type create_custom_action_type_opts :: [
+          configuration_properties: [action_configuration_property, ...],
+          settings: action_type_setting,
+          input_artifact_details: artifact_details,
+          output_artificat_details: artifact_details
+        ]
+  @spec create_custom_action_type(category :: binary, provider :: binary, version :: binary,
+          opts: create_custom_action_type_opts
+        ) :: ExAws.Operation.JSON.t()
+  def create_custom_action_type(category, provider, version, opts \\ []) do
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"category" => category, "provider" => provider, "version" => version})
+    |> request(:create_custom_action_type)
+  end
+
+  @doc """
+    Creates a pipeline
+
+
+  """
+  @type create_pipeline_opts :: [
+          artifact_store: artifact_store,
+          artifact_stores: [binary: artifact_store],
+          name: binary,
+          role_arn: binary,
+          stages: stage_declaration,
+          version: integer
+        ]
+  @spec create_pipeline(pipeline :: create_pipeline_opts) :: ExAws.Operation.JSON.t()
+  def create_pipeline(pipeline) do
+    pipeline
+    |> camelize_keyword()
+    |> request(:create_pipeline)
   end
 
   @doc """
@@ -131,7 +252,7 @@ defmodule ExAws.CodePipeline do
   @spec list_pipelines() :: ExAws.Operation.JSON.t()
   @spec list_pipelines(opts :: paging_options) :: ExAws.Operation.JSON.t()
   def list_pipelines(opts \\ []) do
-    opts |> camelize_keys(spec: @key_spec) |> request(:list_pipelines)
+    opts |> camelize_keyword() |> request(:list_pipelines)
   end
 
   @doc """
@@ -143,7 +264,9 @@ defmodule ExAws.CodePipeline do
           opts :: list_pipeline_executions_options
         ) :: ExAws.Operation.JSON.t()
   def list_pipeline_executions(pipeline_name, opts \\ []) do
-    opts |> camelize_keys(spec: @key_spec) |> Map.merge(%{"pipelineName" => pipeline_name})
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"pipelineName" => pipeline_name})
     |> request(:list_pipeline_executions)
   end
 
@@ -158,7 +281,9 @@ defmodule ExAws.CodePipeline do
   @spec get_pipeline(name :: binary) :: ExAws.Operation.JSON.t()
   @spec get_pipeline(name :: binary, opts :: get_pipeline_options) :: ExAws.Operation.JSON.t()
   def get_pipeline(name, opts \\ []) do
-    opts |> camelize_keys(spec: @key_spec) |> Map.merge(%{"name" => name})
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"name" => name})
     |> request(:get_pipeline)
   end
 
@@ -223,7 +348,7 @@ defmodule ExAws.CodePipeline do
   @spec put_job_failure_result(job_id :: binary, failure_details :: failure_details_options) ::
           ExAws.Operation.JSON.t()
   def put_job_failure_result(job_id, failure_details) do
-    details = camelize_keys(failure_details, spec: @key_spec)
+    details = camelize_keyword(failure_details)
 
     %{"jobId" => job_id, "failureDetails" => details}
     |> request(:put_job_failure_result)
@@ -243,5 +368,42 @@ defmodule ExAws.CodePipeline do
       }
       |> Map.merge(opts)
     )
+  end
+
+  # The API wants keywords in lower camel case format
+  # this function works thru a KeyWord which may have one
+  # layer of KeyWord within it and builds a map where keys
+  # are in this format.
+  #
+  # [test: [my_key: "val"]] becomes %{"test" => %{"myKey" => "val"}}
+  def camelize_keyword(a_list) when is_list(a_list) or is_map(a_list) do
+    case Keyword.keyword?(a_list) or is_map(a_list) do
+      true ->
+        a_list
+        |> Enum.reduce(%{}, fn {k, v}, acc ->
+          k_str =
+            case is_atom(k) do
+              true ->
+                k |> Atom.to_string() |> Macro.camelize() |> decap()
+
+              false ->
+                k
+            end
+
+          Map.put(acc, k_str, camelize_keyword(v))
+        end)
+
+      false ->
+        a_list
+        |> Enum.reduce([], fn item, acc -> [camelize_keyword(item) | acc] end)
+        |> Enum.reverse()
+    end
+  end
+
+  def camelize_keyword(val), do: val
+
+  defp decap(str) do
+    first = String.slice(str, 0..0) |> String.downcase()
+    first <> String.slice(str, 1..-1)
   end
 end
