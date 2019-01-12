@@ -58,11 +58,11 @@ defmodule ExAws.CodePipeline do
           id: binary
         ]
 
-  @type artifact_store :: %{
+  @type artifact_store :: [
           encryption_key: encryption_key,
           location: binary,
           type: binary
-        }
+        ]
 
   @type action_type_id :: %{
           category: binary,
@@ -75,12 +75,12 @@ defmodule ExAws.CodePipeline do
           name: binary
         }
 
-  @type block_declaration :: %{
+  @type block_declaration :: [
           name: binary,
           type: binary
-        }
+        ]
 
-  @type action_declaration :: %{
+  @type action_declaration :: [
           action_type_id: action_type_id,
           configuration: map,
           input_artifacts: [input_artifact, ...],
@@ -90,7 +90,7 @@ defmodule ExAws.CodePipeline do
           role_arn: binary,
           run_order: integer,
           blockers: [block_declaration, ...]
-        }
+        ]
 
   @type stage_declaration :: [
           actions: [action_declaration, ...]
@@ -142,6 +142,8 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
+  Creates a new custom action that can be used in all pipelines associated
+  with the AWS account. Only used for custom actions.
   """
   @type create_custom_action_type_opts :: [
           configuration_properties: [action_configuration_property, ...],
@@ -164,18 +166,19 @@ defmodule ExAws.CodePipeline do
 
 
   """
-  @type create_pipeline_opts :: [
+  @type pipeline_declaration :: [
           artifact_store: artifact_store,
           artifact_stores: [binary: artifact_store],
           name: binary,
           role_arn: binary,
-          stages: stage_declaration,
+          stages: [stage_declaration, ...],
           version: integer
         ]
-  @spec create_pipeline(pipeline :: create_pipeline_opts) :: ExAws.Operation.JSON.t()
+  @spec create_pipeline(pipeline :: pipeline_declaration) :: ExAws.Operation.JSON.t()
   def create_pipeline(pipeline) do
-    pipeline
-    |> camelize_keyword()
+    details = camelize_keyword(pipeline)
+
+    %{"pipeline" => details}
     |> request(:create_pipeline)
   end
 
@@ -208,6 +211,17 @@ defmodule ExAws.CodePipeline do
   def delete_webhook(name) do
     %{"name" => name}
     |> request(:delete_webhook)
+  end
+
+  @doc """
+    Removes the connection between the webhook that was created by CodePipeline
+    and the external tool with events to be detected. Currently only supported
+    for webhooks that target an action type of GitHub.
+  """
+  @spec deregister_webhook_third_party(name :: binary) :: ExAws.Operation.JSON.t()
+  def deregister_webhook_third_party(name) do
+    %{"webhookName" => name}
+    |> request(:deregister_webhook_third_party)
   end
 
   @doc """
@@ -271,6 +285,100 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
+    Gets a listing of all the webhooks in this region for this account.
+    The output lists all webhooks and includes the webhook URL and ARN,
+    as well the configuration for each webhook.
+  """
+  @type list_webhooks_options :: [
+          max_results: binary,
+          next_token: binary
+        ]
+  @spec list_webhooks() :: ExAws.Operation.JSON.t()
+  @spec list_webhooks(opts :: list_webhooks_options) :: ExAws.Operation.JSON.t()
+  def list_webhooks(opts \\ []) do
+    opts
+    |> camelize_keyword()
+    |> request(:list_webhooks)
+  end
+
+  @doc """
+    Returns information about any jobs for AWS CodePipeline to act upon.
+    poll_for_jobs is only valid for action types with "Custom" in the owner field.
+    If the action type contains "AWS" or "ThirdParty" in the owner field, the
+    poll_for_jobs action returns an error.
+  """
+  @type poll_for_jobs_opts :: [
+          max_batch_size: integer,
+          query_param: map
+        ]
+  @spec poll_for_jobs(action_type_id :: action_type_id) :: ExAws.Operation.JSON.t()
+  @spec poll_for_jobs(action_type_id :: action_type_id, opts :: poll_for_jobs_opts) ::
+          ExAws.Operation.JSON.t()
+  def poll_for_jobs(action_type_id, opts \\ []) do
+    action_type_data = action_type_id |> camelize_keyword()
+
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"actionTypeId" => action_type_data})
+    |> request(:poll_for_jobs)
+  end
+
+  @type poll_for_third_party_jobs_opts :: [
+          max_batch_size: integer
+        ]
+  @spec poll_for_third_party_jobs(action_type_id :: action_type_id) :: ExAws.Operation.JSON.t()
+  @spec poll_for_third_party_jobs(
+          action_type_id :: action_type_id,
+          opts :: poll_for_third_party_jobs_opts
+        ) :: ExAws.Operation.JSON.t()
+  def poll_for_third_party_jobs(action_type_id, opts \\ []) do
+    action_type_data = action_type_id |> camelize_keyword()
+
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"actionTypeId" => action_type_data})
+    |> request(:poll_for_third_party_jobs)
+  end
+
+  @type action_revision :: [
+          created: integer,
+          revision_change_id: binary,
+          revision_id: binary
+        ]
+  @spec put_action_revision(
+          pipeline_name :: binary,
+          stage_name :: binary,
+          action_name :: binary,
+          action_revision :: action_revision
+        ) :: ExAws.Operation.JSON.t()
+  def put_action_revision(pipeline_name, stage_name, action_name, action_revision) do
+    action_revision
+    |> camelize_keyword()
+    |> Map.merge(%{
+      "actionName" => action_name,
+      "pipelineName" => pipeline_name,
+      "stageName" => stage_name
+    })
+    |> request(:put_action_revision)
+  end
+
+  @doc """
+    Returns information about a job. Only used for custom actions.
+
+    ## Important
+
+    When this API is called, AWS CodePipeline returns temporary credentials for
+    the Amazon S3 bucket used to store artifacts for the pipeline, if the action
+    requires access to that Amazon S3 bucket for input or output artifacts.
+    Additionally, this API returns any secret values defined for the action.
+  """
+  @spec get_job_details(job_id :: binary) :: ExAws.Operation.JSON.t()
+  def get_job_details(job_id) do
+    %{"jobId" => job_id}
+    |> request(:get_job_details)
+  end
+
+  @doc """
     Returns the metadata, structure, stages, and actions of a pipeline.
 
     Can be used to return the entire structure of a pipeline in JSON format,
@@ -322,6 +430,20 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
+    Gets a summary of all AWS CodePipeline action types associated with your account.
+  """
+  @type list_action_types_options :: [
+          action_owner_filter: binary,
+          next_token: binary
+        ]
+  @spec list_action_types() :: ExAws.Operation.JSON.t()
+  @spec list_action_types(opts :: list_action_types_options) :: ExAws.Operation.JSON.t()
+  def list_action_types(opts \\ []) do
+    camelize_keyword(opts)
+    |> request(:list_action_types)
+  end
+
+  @doc """
     Provides the response to a manual approval request to AWS CodePipeline. Valid responses include Approved and Rejected.
   """
   @spec put_approval_result(
@@ -352,6 +474,180 @@ defmodule ExAws.CodePipeline do
 
     %{"jobId" => job_id, "failureDetails" => details}
     |> request(:put_job_failure_result)
+  end
+
+  @doc """
+    Represents the success of a job as returned to the pipeline by a job worker.
+    Only used for custom actions.
+  """
+  @type execution_details :: [
+          external_execution_id: binary,
+          percent_complete: integer,
+          summary: binary
+        ]
+  @type current_revision :: [
+          change_identifier: binary,
+          created: integer,
+          revision: binary,
+          revision_summary: binary
+        ]
+  @type put_job_success_result_opts :: [
+          execution_details: execution_details,
+          current_revision: current_revision
+        ]
+  @spec put_job_success_result(job_id :: binary, opts :: put_job_success_result_opts) ::
+          ExAws.Operation.JSON.t()
+  def put_job_success_result(job_id, opts \\ []) do
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"jobId" => job_id})
+    |> request(:put_job_success_result)
+  end
+
+  @doc """
+    Represents the failure of a third party job as returned to the pipeline by a job worker.
+    Only used for partner actions.
+  """
+  def put_third_party_job_failure_result(job_id, client_token, failure_details) do
+    details = camelize_keyword(failure_details)
+
+    %{"jobId" => job_id, "clientToken" => client_token, "failureDetails" => details}
+    |> request(:put_third_party_job_failure_result)
+  end
+
+  @doc """
+    Represents the success of a third party job as returned to the pipeline by a job worker.
+    Only used for partner actions.
+  """
+  @type put_third_party_job_success_result_opts :: [
+          continuation_token: binary,
+          current_revision: current_revision,
+          execution_details: execution_details
+        ]
+  @spec put_third_party_job_success_result(job_id :: binary, client_token :: binary) ::
+          ExAws.Operation.JSON.t()
+  @spec put_third_party_job_success_result(
+          job_id :: binary,
+          client_token :: binary,
+          opts :: put_third_party_job_success_result_opts
+        ) :: ExAws.Operation.JSON.t()
+  def put_third_party_job_success_result(job_id, client_token, opts \\ []) do
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"jobId" => job_id, "clientToken" => client_token})
+    |> request(:put_third_party_job_success_result)
+  end
+
+  @type authentication_configuration :: [
+          allowed_iP_range: binary,
+          secret_token: binary
+        ]
+
+  @type webhook_filter_rule :: [
+          json_path: binary,
+          match_equals: binary
+        ]
+
+  @type webhook_definition :: [
+          authentication: binary,
+          authentication_configuration: authentication_configuration,
+          filters: [webhook_filter_rule, ...],
+          name: binary,
+          target_action: binary,
+          target_pipeline: binary
+        ]
+  @doc """
+    Defines a webhook and returns a unique webhook URL generated by
+    CodePipeline.
+
+    This URL can be supplied to third party source hosting
+    providers to call every time there's a code change. When CodePipeline
+    receives a POST request on this URL, the pipeline defined in the webhook is
+    started as long as the POST request satisfied the authentication and filtering
+    requirements supplied when defining the webhook. register_webhook_with_third_party
+    and deregister_webhook_with_third_party APIs can be used to automatically configure
+    supported third parties to call the generated webhook URL.
+  """
+  @spec put_webhook(webhook :: webhook_definition) :: ExAws.Operation.JSON.t()
+  def put_webhook(webhook) do
+    details = camelize_keyword(webhook)
+
+    %{"webhook" => details}
+    |> request(:put_webhook)
+  end
+
+  @doc """
+    Configures a connection between the webhook that was created and
+    the external tool with events to be detected.
+  """
+  @spec register_webhook_with_third_party(webhook_name :: binary) :: ExAws.Operation.JSON.t()
+  def register_webhook_with_third_party(webhook_name) do
+    %{"webhookName" => webhook_name}
+    |> request(:register_webhook_with_third_party)
+  end
+
+  @doc """
+    Resumes the pipeline execution by retrying the last failed
+    actions in a stage
+  """
+  @spec retry_stage_execution(
+          pipeline_name :: binary,
+          stage_name :: binary,
+          pipeline_execution_id :: binary
+        ) :: ExAws.Operation.JSON.t()
+  @spec retry_stage_execution(
+          pipeline_name :: binary,
+          stage_name :: binary,
+          pipeline_execution_id :: binary,
+          retry_mode :: binary
+        ) :: ExAws.Operation.JSON.t()
+  def retry_stage_execution(
+        pipeline_name,
+        stage_name,
+        pipeline_execution_id,
+        retry_mode \\ "FAILED_ACTIONS"
+      ) do
+    %{
+      pipelineExecutionId: pipeline_execution_id,
+      pipelineName: pipeline_name,
+      retryMode: retry_mode,
+      stageName: stage_name
+    }
+    |> request(:retry_stage_execution)
+  end
+
+  @doc """
+    Starts the specified pipeline.
+
+    Specifically, it begins processing the latest commit to the
+    source location specified as part of the pipeline.
+  """
+  @type start_pipeline_execution_opts :: [
+          client_request_token: binary
+        ]
+  @spec start_pipeline_execution(name :: binary) :: ExAws.Operation.JSON.t()
+  @spec start_pipeline_execution(name :: binary, opts :: start_pipeline_execution_opts) ::
+          ExAws.Operation.JSON.t()
+  def start_pipeline_execution(name, opts \\ []) do
+    opts
+    |> camelize_keyword()
+    |> Map.merge(%{"name" => name})
+    |> request(:start_pipeline_execution)
+  end
+
+  @doc """
+  Updates a specified pipeline with edits or changes to its structure.
+
+  Use a JSON file with the pipeline structure in conjunction with update_pipeline
+  to provide the full structure of the pipeline. Updating the pipeline increases
+  the version number of the pipeline by 1.
+  """
+  @spec update_pipeline(pipeline :: pipeline_declaration) :: ExAws.Operation.JSON.t()
+  def update_pipeline(pipeline) do
+    details = camelize_keyword(pipeline)
+
+    %{"pipeline" => details}
+    |> request(:update_pipeline)
   end
 
   defp request(data, action, opts \\ %{}) do
