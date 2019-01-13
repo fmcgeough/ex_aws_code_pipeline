@@ -270,6 +270,22 @@ defmodule ExAws.CodePipeline do
 
   @doc """
     Prevents artifacts in a pipeline from transitioning to the next stage in the pipeline.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.disable_stage_transition("pipeline", "stage", "Inbound", "Removing")
+        iex> op.data
+        %{
+          "pipelineName" => "pipeline",
+          "stageName" => "stage",
+          "transitionType" => "Inbound",
+          "reason" => "Removing"
+        }
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.DisableStageTransition"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec disable_stage_transition(
           pipeline_name :: binary,
@@ -277,7 +293,8 @@ defmodule ExAws.CodePipeline do
           transition_type :: binary,
           reason :: binary
         ) :: ExAws.Operation.JSON.t()
-  def disable_stage_transition(pipeline_name, stage_name, transition_type, reason) do
+  def disable_stage_transition(pipeline_name, stage_name, transition_type, reason)
+      when transition_type in ["Inbound", "Outbound"] do
     %{
       "pipelineName" => pipeline_name,
       "stageName" => stage_name,
@@ -289,19 +306,35 @@ defmodule ExAws.CodePipeline do
 
   @doc """
     Enables artifacts in a pipeline to transition to a stage in a pipeline.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.enable_stage_transition("pipeline", "stage", "Inbound")
+        iex> op.data
+        %{
+          "pipelineName" => "pipeline",
+          "stageName" => "stage",
+          "transitionType" => "Inbound"
+        }
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.EnableStageTransition"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec enable_stage_transition(
           pipeline_name :: binary,
           stage_name :: binary,
           transition_type :: binary
         ) :: ExAws.Operation.JSON.t()
-  def enable_stage_transition(pipeline_name, stage_name, transition_type) do
+  def enable_stage_transition(pipeline_name, stage_name, transition_type)
+      when transition_type in ["Inbound", "Outbound"] do
     %{
       "pipelineName" => pipeline_name,
       "stageName" => stage_name,
       "transitionType" => transition_type
     }
-    |> request(:disable_stage_transition)
+    |> request(:enable_stage_transition)
   end
 
   @doc """
@@ -338,7 +371,6 @@ defmodule ExAws.CodePipeline do
     which can then be modified and used to update the pipeline structure
     with update_pipeline.
 
-
   ## Examples:
 
         iex> op = ExAws.CodePipeline.get_pipeline("MyPipeline")
@@ -363,6 +395,17 @@ defmodule ExAws.CodePipeline do
     Returns information about an execution of a pipeline, including details
     about artifacts, the pipeline execution ID, and the name, version, and
     status of the pipeline.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.get_pipeline_execution("MyPipeline", "executionId")
+        iex> op.data
+        %{"pipelineName" => "MyPipeline", "pipelineExecutionId" => "executionId"}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.GetPipelineExecution"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec get_pipeline_execution(pipeline_name :: binary, pipeline_execution_id :: binary) ::
           ExAws.Operation.JSON.t()
@@ -373,6 +416,17 @@ defmodule ExAws.CodePipeline do
 
   @doc """
     Returns information about the state of a pipeline, including the stages and actions.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.get_pipeline_state("MyPipeline")
+        iex> op.data
+        %{"name" => "MyPipeline"}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.GetPipelineState"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec get_pipeline_state(name :: binary) :: ExAws.Operation.JSON.t()
   def get_pipeline_state(name) do
@@ -387,6 +441,17 @@ defmodule ExAws.CodePipeline do
     for the Amazon S3 bucket used to store artifacts for the pipeline, if the action
     requires access to that Amazon S3 bucket for input or output artifacts. Additionally,
     this API returns any secret values defined for the action.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.get_third_party_job_details("MyJob", "ClientToken")
+        iex> op.data
+        %{"clientToken" => "ClientToken", "jobId" => "MyJob"}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.GetThirdPartyJobDetails"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   def get_third_party_job_details(job_id, client_token) do
     %{"jobId" => job_id, "clientToken" => client_token}
@@ -395,6 +460,17 @@ defmodule ExAws.CodePipeline do
 
   @doc """
     Gets a summary of all AWS CodePipeline action types associated with your account.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.list_action_types([action_owner_filter: "MyFilter", next_token: "ClientToken"])
+        iex> op.data
+        %{"actionOwnerFilter" => "MyFilter", "nextToken" => "ClientToken"}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.ListActionTypes"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @type list_action_types_options :: [
           action_owner_filter: binary,
@@ -769,7 +845,7 @@ defmodule ExAws.CodePipeline do
   # are in this format.
   #
   # [test: [my_key: "val"]] becomes %{"test" => %{"myKey" => "val"}}
-  def camelize_keyword(a_list) when is_list(a_list) or is_map(a_list) do
+  defp camelize_keyword(a_list) when is_list(a_list) or is_map(a_list) do
     case Keyword.keyword?(a_list) or is_map(a_list) do
       true ->
         a_list
@@ -793,7 +869,7 @@ defmodule ExAws.CodePipeline do
     end
   end
 
-  def camelize_keyword(val), do: val
+  defp camelize_keyword(val), do: val
 
   defp decap(str) do
     first = String.slice(str, 0..0) |> String.downcase()
