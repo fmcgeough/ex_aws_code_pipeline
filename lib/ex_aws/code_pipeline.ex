@@ -227,7 +227,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    deletes a web hook.
+    Deletes a web hook.
 
   ## Examples:
 
