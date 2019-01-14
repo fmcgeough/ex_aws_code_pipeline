@@ -453,6 +453,8 @@ defmodule ExAws.CodePipeline do
           {"content-type", "application/x-amz-json-1.1"}
         ]
   """
+  @spec get_third_party_job_details(job_id :: binary, client_token :: binary) ::
+          ExAws.Operation.JSON.t()
   def get_third_party_job_details(job_id, client_token) do
     %{"jobId" => job_id, "clientToken" => client_token}
     |> request(:get_third_party_job_details)
@@ -741,6 +743,17 @@ defmodule ExAws.CodePipeline do
   @doc """
     Configures a connection between the webhook that was created and
     the external tool with events to be detected.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.register_webhook_with_third_party("MyWebHook")
+        iex> op.data
+        %{"webhookName" => "MyWebHook"}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.RegisterWebhookWithThirdParty"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec register_webhook_with_third_party(webhook_name :: binary) :: ExAws.Operation.JSON.t()
   def register_webhook_with_third_party(webhook_name) do
@@ -751,6 +764,22 @@ defmodule ExAws.CodePipeline do
   @doc """
     Resumes the pipeline execution by retrying the last failed
     actions in a stage
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.retry_stage_execution("MyPipeline", "MyStage", "ExecutionId")
+        iex> op.data
+        %{
+          "pipelineExecutionId" => "ExecutionId",
+          "pipelineName" => "MyPipeline",
+          "retryMode" => "FAILED_ACTIONS",
+          "stageName" => "MyStage"
+        }
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.RetryStageExecution"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec retry_stage_execution(
           pipeline_name :: binary,
@@ -770,10 +799,10 @@ defmodule ExAws.CodePipeline do
         retry_mode \\ "FAILED_ACTIONS"
       ) do
     %{
-      pipelineExecutionId: pipeline_execution_id,
-      pipelineName: pipeline_name,
-      retryMode: retry_mode,
-      stageName: stage_name
+      "pipelineExecutionId" => pipeline_execution_id,
+      "pipelineName" => pipeline_name,
+      "retryMode" => retry_mode,
+      "stageName" => stage_name
     }
     |> request(:retry_stage_execution)
   end
@@ -783,6 +812,21 @@ defmodule ExAws.CodePipeline do
 
     Specifically, it begins processing the latest commit to the
     source location specified as part of the pipeline.
+
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.start_pipeline_execution("MyPipeline", [client_request_token: "Test"])
+        iex> op.data
+        %{
+          "clientRequestToken" => "Test",
+          "name" => "MyPipeline"
+        }
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.StartPipelineExecution"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @type start_pipeline_execution_opts :: [
           client_request_token: binary
@@ -817,13 +861,14 @@ defmodule ExAws.CodePipeline do
     own JSON instead of relying on the individual functions to format
     the JSON data.
 
-    The action has to be an atom that aligns with the API calls above
+    The action has to be an atom that aligns with one of the CodePipeline
+    API calls (see calls above for examples).
   """
-  def direct_request(action, data, opts \\ %{}) do
-    request(data, action, opts)
+  def direct_request(action, data) do
+    request(data, action)
   end
 
-  defp request(data, action, opts \\ %{}) do
+  defp request(data, action) do
     operation = action |> Atom.to_string() |> Macro.camelize()
 
     ExAws.Operation.JSON.new(
@@ -835,7 +880,6 @@ defmodule ExAws.CodePipeline do
           {"content-type", "application/x-amz-json-1.1"}
         ]
       }
-      |> Map.merge(opts)
     )
   end
 
