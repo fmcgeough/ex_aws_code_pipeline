@@ -10,7 +10,7 @@ The package can be installed by adding ex_aws_code_pipeline to your list of depe
 def deps do
   [
     {:ex_aws, "~> 2.0"},
-    {:ex_aws_code_deploy, "~> 2.0"},
+    {:ex_aws_code_pipeline, "~> 2.0"},
     {:poison, "~> 3.0"},
     {:hackney, "~> 1.9"},
   ]

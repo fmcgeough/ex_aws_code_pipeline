@@ -46,7 +46,7 @@ defmodule ExAwsCodePipeline.MixProject do
 
   defp package do
     [
-      description: "AWS Code Deploy service for ex_aws",
+      description: "AWS Code Pipeline service for ex_aws",
       maintainers: ["Frank McGeough"],
       licenses: ["MIT"],
       links: %{github: "https://github.com/fmcgeough/ex_aws_code_pipeline"}
