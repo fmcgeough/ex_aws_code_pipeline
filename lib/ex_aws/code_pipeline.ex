@@ -20,7 +20,7 @@ defmodule ExAws.CodePipeline do
           pipeline_name: binary
         ]
   @type get_pipeline_options :: [
-          version: binary
+          version: integer
         ]
 
   @type approval_result :: %{status: binary, summary: binary}
@@ -147,18 +147,37 @@ defmodule ExAws.CodePipeline do
   """
   @type create_custom_action_type_opts :: [
           configuration_properties: [action_configuration_property, ...],
-          settings: action_type_setting,
-          input_artifact_details: artifact_details,
-          output_artificat_details: artifact_details
+          settings: action_type_setting
         ]
-  @spec create_custom_action_type(category :: binary, provider :: binary, version :: binary,
+  @spec create_custom_action_type(
+          category :: binary,
+          provider :: binary,
+          version :: binary,
+          input_artifact_details :: artifact_details,
+          output_artifact_details :: artifact_details,
           opts: create_custom_action_type_opts
         ) :: ExAws.Operation.JSON.t()
-  def create_custom_action_type(category, provider, version, opts \\ [])
+  def create_custom_action_type(
+        category,
+        provider,
+        version,
+        input_artifact_details,
+        output_artifact_details,
+        opts \\ []
+      )
       when category in ["Source", "Build", "Deploy", "Test", "Invoke", "Approval"] do
+    output_details = camelize_keyword(output_artifact_details)
+    input_details = camelize_keyword(input_artifact_details)
+
     opts
     |> camelize_keyword()
-    |> Map.merge(%{"category" => category, "provider" => provider, "version" => version})
+    |> Map.merge(%{
+      "category" => category,
+      "provider" => provider,
+      "version" => version,
+      "inputArtifactDetails" => input_details,
+      "outputArtifactDetails" => output_details
+    })
     |> request(:create_custom_action_type)
   end
 
@@ -373,9 +392,9 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.get_pipeline("MyPipeline")
+        iex> op = ExAws.CodePipeline.get_pipeline("MyPipeline", [version: 1])
         iex> op.data
-        %{"name" => "MyPipeline"}
+        %{"name" => "MyPipeline", "version" => 1}
         iex> op.headers
         [
           {"x-amz-target", "CodePipeline_20150709.GetPipeline"},
@@ -487,6 +506,17 @@ defmodule ExAws.CodePipeline do
 
   @doc """
     Gets a summary of the most recent executions for a pipeline.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.list_pipeline_executions("MyPipeline")
+        iex> op.data
+        %{"pipelineName" => "MyPipeline"}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.ListPipelineExecutions"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec list_pipeline_executions(pipeline_name :: binary) :: ExAws.Operation.JSON.t()
   @spec list_pipeline_executions(
@@ -502,6 +532,17 @@ defmodule ExAws.CodePipeline do
 
   @doc """
     Gets a summary of all of the pipelines associated with your account.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.list_pipelines()
+        iex> op.data
+        %{}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.ListPipelines"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec list_pipelines() :: ExAws.Operation.JSON.t()
   @spec list_pipelines(opts :: paging_options) :: ExAws.Operation.JSON.t()
@@ -513,6 +554,17 @@ defmodule ExAws.CodePipeline do
     Gets a listing of all the webhooks in this region for this account.
     The output lists all webhooks and includes the webhook URL and ARN,
     as well the configuration for each webhook.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.list_webhooks()
+        iex> op.data
+        %{}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.ListWebhooks"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @type list_webhooks_options :: [
           max_results: binary,
@@ -531,6 +583,17 @@ defmodule ExAws.CodePipeline do
     poll_for_jobs is only valid for action types with "Custom" in the owner field.
     If the action type contains "AWS" or "ThirdParty" in the owner field, the
     poll_for_jobs action returns an error.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.poll_for_jobs([category: "Build", owner: "AWS", provider: "AWS CodeDeploy", version: "1"])
+        iex> op.data
+        %{"actionTypeId" => %{"category" => "Build", "owner" => "AWS", "provider" => "AWS CodeDeploy", "version" => "1"}}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.PollForJobs"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @type poll_for_jobs_opts :: [
           max_batch_size: integer,
@@ -557,6 +620,17 @@ defmodule ExAws.CodePipeline do
     When this API is called, AWS CodePipeline returns temporary credentials for
     the Amazon S3 bucket used to store artifacts for the pipeline, if the action
     requires access to that Amazon S3 bucket for input or output artifacts.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.poll_for_third_party_jobs([category: "Build", owner: "Custom", provider: "MyProvider", version: "1"])
+        iex> op.data
+        %{"actionTypeId" => %{"category" => "Build", "owner" => "Custom", "provider" => "MyProvider", "version" => "1"}}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.PollForThirdPartyJobs"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @type poll_for_third_party_jobs_opts :: [
           max_batch_size: integer
@@ -590,13 +664,14 @@ defmodule ExAws.CodePipeline do
           action_revision :: action_revision
         ) :: ExAws.Operation.JSON.t()
   def put_action_revision(pipeline_name, stage_name, action_name, action_revision) do
-    action_revision
-    |> camelize_keyword()
-    |> Map.merge(%{
+    revision_details = camelize_keyword(action_revision)
+
+    %{
       "actionName" => action_name,
       "pipelineName" => pipeline_name,
+      "actionRevision" => revision_details,
       "stageName" => stage_name
-    })
+    }
     |> request(:put_action_revision)
   end
 
@@ -625,6 +700,17 @@ defmodule ExAws.CodePipeline do
   @doc """
     Represents the failure of a job as returned to the pipeline by a job worker.
     Only used for custom actions.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.put_job_failure_result("MyJob", [external_execution_id: "id", message: "", type: "JobFailed"] )
+        iex> op.data
+        %{"jobId" => "MyJob", "failureDetails" => %{"externalExecutionId" => "id", "message" => "", "type" => "JobFailed"}}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.PutJobFailureResult"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec put_job_failure_result(job_id :: binary, failure_details :: failure_details) ::
           ExAws.Operation.JSON.t()
@@ -731,6 +817,17 @@ defmodule ExAws.CodePipeline do
     requirements supplied when defining the webhook. register_webhook_with_third_party
     and deregister_webhook_with_third_party APIs can be used to automatically configure
     supported third parties to call the generated webhook URL.
+
+  ## Examples:
+
+        iex> op = ExAws.CodePipeline.put_webhook("MyWebHook")
+        iex> op.data
+        %{"webhook" => "MyWebHook"}
+        iex> op.headers
+        [
+          {"x-amz-target", "CodePipeline_20150709.PutWebhook"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
   @spec put_webhook(webhook :: webhook_definition) :: ExAws.Operation.JSON.t()
   def put_webhook(webhook) do

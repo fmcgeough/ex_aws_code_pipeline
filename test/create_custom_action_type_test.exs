@@ -2,8 +2,6 @@ defmodule CreateCustomActionTest do
   use ExUnit.Case
 
   @opts [
-    input_artifact_details: [minimum_count: 0, maximum_count: 100],
-    output_artifact_details: [minimum_count: 0, maximum_count: 100],
     action_type_setting: [
       entity_url_template: "string",
       execution_url_template: "string",
@@ -55,7 +53,19 @@ defmodule CreateCustomActionTest do
   }
 
   test "custom action creation" do
-    op = ExAws.CodePipeline.create_custom_action_type("Source", "AWS CodeDeploy", "string", @opts)
+    input_artifact = [minimum_count: 0, maximum_count: 100]
+    output_artifact = [minimum_count: 0, maximum_count: 100]
+
+    op =
+      ExAws.CodePipeline.create_custom_action_type(
+        "Source",
+        "AWS CodeDeploy",
+        "string",
+        input_artifact,
+        output_artifact,
+        @opts
+      )
+
     assert op.data == @expected_data
 
     assert op.headers == [
