@@ -2,10 +2,65 @@ defmodule ExAws.CodePipeline do
   @moduledoc """
     Operations on AWS CodePipeline
   """
+
   # version of the AWS API
 
   @version "20150709"
   @namespace "CodePipeline"
+  @valid_categories ["Source", "Build", "Deploy", "Test", "Invoke", "Approval"]
+
+  alias ExAws.CodePipeline.Utils
+  alias ExAws.Operation.JSON, as: ExAwsOperationJSON
+
+  @typedoc """
+  The unique system-generated ID of the job for which you want to confirm receipt.
+
+  Pattern: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+  """
+  @type job_id() :: binary()
+
+  @typedoc """
+  A system-generated random number that CodePipeline uses to ensure that the job is being worked on
+  by only one job worker. Get this number from the response of the `poll_for_jobs/2` request that
+  returned this job.
+
+  - Length Constraints: Minimum length of 1. Maximum length of 50.
+  """
+  @type nonce() :: binary()
+
+  @typedoc """
+  The clientToken portion of the clientId and clientToken pair used to verify that the calling
+  entity is allowed access to the job and its details.
+
+  - Length Constraints: Minimum length of 1. Maximum length of 256.
+  """
+  @type client_token() :: binary()
+
+  @typedoc """
+  The category of the custom action, such as a build action or a test action.
+
+  Valid Values
+  ```
+  ["Source", "Build", "Deploy", "Test", "Invoke", "Approval"]
+  ```
+  """
+  @type category() :: binary()
+
+  @typedoc """
+  The provider of the service used in the custom action, such as CodeDeploy
+
+  - Length Constraints: Minimum length of 1. Maximum length of 35.
+  - Pattern: [0-9A-Za-z_-]+
+  """
+  @type provider() :: binary()
+
+  @typedoc """
+  The version identifier of the custom action
+
+  - Length Constraints: Minimum length of 1. Maximum length of 9.
+  - Pattern: [0-9A-Za-z_-]+
+  """
+  @type version() :: binary()
 
   @typedoc """
     Used generically to define a paging next_token
@@ -48,10 +103,17 @@ defmodule ExAws.CodePipeline do
           third_party_configuration_url: binary
         ]
 
-  @type artifact_details :: [
-          minimum_count: integer,
-          maximum_count: integer
-        ]
+  @typedoc """
+  Information about the details of an artifact
+
+  - minimum_count - The minimum number of artifacts allowed for the action type.
+    Valid Range: Minimum value of 0. Maximum value of 5.
+  - maximum_count -The maximum number of artifacts allowed for the action type.
+    Valid Range: Minimum value of 0. Maximum value of 5.
+  """
+  @type artifact_details() ::
+          [minimum_count: non_neg_integer(), maximum_count: non_neg_integer()]
+          | %{required(:minimum_count) => non_neg_integer(), required(:maximum_count) => non_neg_integer()}
 
   @type encryption_key :: [
           type: binary,
@@ -95,67 +157,162 @@ defmodule ExAws.CodePipeline do
   @type stage_declaration :: [
           actions: [action_declaration, ...]
         ]
+
+  @type create_custom_action_type_opts ::
+          [
+            configuration_properties: [action_configuration_property()],
+            settings: action_type_setting()
+          ]
+          | %{
+              optional(:configuration_properties) => [action_configuration_property()],
+              optional(:settings) => action_type_setting()
+            }
+
+  @type pipeline_declaration :: [
+          artifact_store: artifact_store,
+          artifact_stores: [binary: artifact_store],
+          name: binary,
+          role_arn: binary,
+          stages: [stage_declaration, ...],
+          version: integer
+        ]
+
   @doc """
-    Returns information about a specified job and whether that job has
-    been received by the job worker. Only used for custom actions.
+  Returns information about a specified job and whether that job has been received by the job
+  worker. Only used for custom actions.
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.acknowledge_job("f4f4ff82-2d11-EXAMPLE", "3")
-        iex> op.data
-        %{"jobId" => "f4f4ff82-2d11-EXAMPLE", "nonce" => "3"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.acknowledge_job("f4f4ff82-2d11-EXAMPLE", "3")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"jobId" => "f4f4ff82-2d11-EXAMPLE", "nonce" => "3"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.AcknowledgeJob"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @spec acknowledge_job(job_id :: binary, nonce :: binary) :: ExAws.Operation.JSON.t()
+  @spec acknowledge_job(job_id(), nonce()) :: ExAws.Operation.JSON.t()
   def acknowledge_job(job_id, nonce) do
-    %{"jobId" => job_id, "nonce" => nonce}
+    %{job_id: job_id, nonce: nonce}
+    |> Utils.camelize_map()
     |> request(:acknowledge_job)
   end
 
   @doc """
-    Confirms a job worker has received the specified job. Only used for partner actions.
+  Confirms a job worker has received the specified job. Only used for partner actions.
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.acknowledge_third_party_job("ABCXYZ", "f4f4ff82-2d11-EXAMPLE", "3")
-        iex> op.data
-        %{
-        "clientToken" => "ABCXYZ",
-        "jobId" => "f4f4ff82-2d11-EXAMPLE",
-        "nonce" => "3"
-        }
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.acknowledge_third_party_job("ABCXYZ", "f4f4ff82-2d11-EXAMPLE", "3")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "clientToken" => "ABCXYZ",
+          "jobId" => "f4f4ff82-2d11-EXAMPLE",
+          "nonce" => "3"
+        },
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.AcknowledgeThirdPartyJob"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @spec acknowledge_third_party_job(client_token :: binary, job_id :: binary, nonce :: binary) ::
-          ExAws.Operation.JSON.t()
+  @spec acknowledge_third_party_job(client_token(), job_id(), nonce()) :: ExAws.Operation.JSON.t()
   def acknowledge_third_party_job(client_token, job_id, nonce) do
-    %{"clientToken" => client_token, "jobId" => job_id, "nonce" => nonce}
+    %{client_token: client_token, job_id: job_id, nonce: nonce}
+    |> Utils.camelize_map()
     |> request(:acknowledge_third_party_job)
   end
 
   @doc """
   Creates a new custom action that can be used in all pipelines associated
   with the AWS account. Only used for custom actions.
+
+  ## Examples
+
+      iex> version = 1
+      iex> category = "Build"
+      iex> provider = "MyJenkinsProviderName"
+      iex> input_artifact_details = %{maximum_count: 1, minimum_count: 0}
+      iex> output_artifact_details = %{maximum_count: 1, minimum_count: 0}
+      iex> opts = %{
+      ...>  settings: %{
+      ...>entity_url_template: "https://192.0.2.4/job/{Config:ProjectName}/",
+      ...>    execution_url_template: "https://192.0.2.4/job/{Config:ProjectName}/lastSuccessfulBuild/{ExternalExecutionId}/"
+      ...> },
+      ...> configuration_properties: [
+      ...>   %{
+      ...>      name: "MyJenkinsExampleBuildProject",
+      ...>      type: "String",
+      ...>      description: "The name of the build project must be provided when this action is added to the pipeline.",
+      ...>      key: true,
+      ...>      required: true,
+      ...>      secret: false,
+      ...>      queryable: false
+      ...>    }
+      ...>  ]
+      ...> }
+      iex> ExAws.CodePipeline.create_custom_action_type(category, provider, version, input_artifact_details, output_artifact_details, opts)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "category" => "Build",
+          "configurationProperties" => [
+            %{
+              "description" => "The name of the build project must be provided when this action is added to the pipeline.",
+              "key" => true,
+              "name" => "MyJenkinsExampleBuildProject",
+              "queryable" => false,
+              "required" => true,
+              "secret" => false,
+              "type" => "String"
+            }
+          ],
+          "inputArtifactDetails" => %{"maximumCount" => 1, "minimumCount" => 0},
+          "outputArtifactDetails" => %{"maximumCount" => 1, "minimumCount" => 0},
+          "provider" => "MyJenkinsProviderName",
+          "settings" => %{
+            "entityUrlTemplate" => "https://192.0.2.4/job/{Config:ProjectName}/",
+            "executionUrlTemplate" => "https://192.0.2.4/job/{Config:ProjectName}/lastSuccessfulBuild/{ExternalExecutionId}/"
+          },
+          "version" => 1
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodePipeline_20150709.CreateCustomActionType"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @type create_custom_action_type_opts :: [
-          configuration_properties: [action_configuration_property, ...],
-          settings: action_type_setting
-        ]
   @spec create_custom_action_type(
-          category :: binary,
-          provider :: binary,
-          version :: binary,
-          input_artifact_details :: artifact_details,
-          output_artifact_details :: artifact_details,
-          opts: create_custom_action_type_opts
+          category(),
+          provider(),
+          version(),
+          artifact_details(),
+          artifact_details(),
+          create_custom_action_type_opts()
         ) :: ExAws.Operation.JSON.t()
   def create_custom_action_type(
         category,
@@ -165,36 +322,26 @@ defmodule ExAws.CodePipeline do
         output_artifact_details,
         opts \\ []
       )
-      when category in ["Source", "Build", "Deploy", "Test", "Invoke", "Approval"] do
-    output_details = camelize_keyword(output_artifact_details)
-    input_details = camelize_keyword(input_artifact_details)
-
+      when category in @valid_categories do
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
     |> Map.merge(%{
-      "category" => category,
-      "provider" => provider,
-      "version" => version,
-      "inputArtifactDetails" => input_details,
-      "outputArtifactDetails" => output_details
+      category: category,
+      provider: provider,
+      version: version,
+      input_artifact_details: Utils.keyword_to_map(input_artifact_details),
+      output_artifact_details: Utils.keyword_to_map(output_artifact_details)
     })
+    |> Utils.camelize_map()
     |> request(:create_custom_action_type)
   end
 
   @doc """
-    Creates a pipeline
+  Creates a pipeline
   """
-  @type pipeline_declaration :: [
-          artifact_store: artifact_store,
-          artifact_stores: [binary: artifact_store],
-          name: binary,
-          role_arn: binary,
-          stages: [stage_declaration, ...],
-          version: integer
-        ]
   @spec create_pipeline(pipeline :: pipeline_declaration) :: ExAws.Operation.JSON.t()
   def create_pipeline(pipeline) do
-    details = camelize_keyword(pipeline)
+    details = pipeline |> Utils.keyword_to_map() |> Utils.camelize_map()
 
     %{"pipeline" => details}
     |> request(:create_pipeline)
@@ -405,7 +552,8 @@ defmodule ExAws.CodePipeline do
   @spec get_pipeline(name :: binary, opts :: get_pipeline_options) :: ExAws.Operation.JSON.t()
   def get_pipeline(name, opts \\ []) do
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"name" => name})
     |> request(:get_pipeline)
   end
@@ -500,7 +648,9 @@ defmodule ExAws.CodePipeline do
   @spec list_action_types() :: ExAws.Operation.JSON.t()
   @spec list_action_types(opts :: list_action_types_options) :: ExAws.Operation.JSON.t()
   def list_action_types(opts \\ []) do
-    camelize_keyword(opts)
+    opts
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> request(:list_action_types)
   end
 
@@ -525,7 +675,8 @@ defmodule ExAws.CodePipeline do
         ) :: ExAws.Operation.JSON.t()
   def list_pipeline_executions(pipeline_name, opts \\ []) do
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"pipelineName" => pipeline_name})
     |> request(:list_pipeline_executions)
   end
@@ -547,7 +698,10 @@ defmodule ExAws.CodePipeline do
   @spec list_pipelines() :: ExAws.Operation.JSON.t()
   @spec list_pipelines(opts :: paging_options) :: ExAws.Operation.JSON.t()
   def list_pipelines(opts \\ []) do
-    opts |> camelize_keyword() |> request(:list_pipelines)
+    opts
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
+    |> request(:list_pipelines)
   end
 
   @doc """
@@ -574,7 +728,8 @@ defmodule ExAws.CodePipeline do
   @spec list_webhooks(opts :: list_webhooks_options) :: ExAws.Operation.JSON.t()
   def list_webhooks(opts \\ []) do
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> request(:list_webhooks)
   end
 
@@ -603,10 +758,14 @@ defmodule ExAws.CodePipeline do
   @spec poll_for_jobs(action_type_id :: action_type_id, opts :: poll_for_jobs_opts) ::
           ExAws.Operation.JSON.t()
   def poll_for_jobs(action_type_id, opts \\ []) do
-    action_type_data = action_type_id |> camelize_keyword()
+    action_type_data =
+      action_type_id
+      |> Utils.keyword_to_map()
+      |> Utils.camelize_map()
 
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"actionTypeId" => action_type_data})
     |> request(:poll_for_jobs)
   end
@@ -641,10 +800,14 @@ defmodule ExAws.CodePipeline do
           opts :: poll_for_third_party_jobs_opts
         ) :: ExAws.Operation.JSON.t()
   def poll_for_third_party_jobs(action_type_id, opts \\ []) do
-    action_type_data = action_type_id |> camelize_keyword()
+    action_type_data =
+      action_type_id
+      |> Utils.keyword_to_map()
+      |> Utils.camelize_map()
 
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"actionTypeId" => action_type_data})
     |> request(:poll_for_third_party_jobs)
   end
@@ -664,7 +827,10 @@ defmodule ExAws.CodePipeline do
           action_revision :: action_revision
         ) :: ExAws.Operation.JSON.t()
   def put_action_revision(pipeline_name, stage_name, action_name, action_revision) do
-    revision_details = camelize_keyword(action_revision)
+    revision_details =
+      action_revision
+      |> Utils.keyword_to_map()
+      |> Utils.camelize_map()
 
     %{
       "actionName" => action_name,
@@ -715,7 +881,10 @@ defmodule ExAws.CodePipeline do
   @spec put_job_failure_result(job_id :: binary, failure_details :: failure_details) ::
           ExAws.Operation.JSON.t()
   def put_job_failure_result(job_id, failure_details) do
-    details = camelize_keyword(failure_details)
+    details =
+      failure_details
+      |> Utils.keyword_to_map()
+      |> Utils.camelize_map()
 
     %{"jobId" => job_id, "failureDetails" => details}
     |> request(:put_job_failure_result)
@@ -744,7 +913,8 @@ defmodule ExAws.CodePipeline do
           ExAws.Operation.JSON.t()
   def put_job_success_result(job_id, opts \\ []) do
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"jobId" => job_id})
     |> request(:put_job_success_result)
   end
@@ -759,7 +929,10 @@ defmodule ExAws.CodePipeline do
           failure_details :: failure_details
         ) :: ExAws.Operation.JSON.t()
   def put_third_party_job_failure_result(job_id, client_token, failure_details) do
-    details = camelize_keyword(failure_details)
+    details =
+      failure_details
+      |> Utils.keyword_to_map()
+      |> Utils.camelize_map()
 
     %{"jobId" => job_id, "clientToken" => client_token, "failureDetails" => details}
     |> request(:put_third_party_job_failure_result)
@@ -783,7 +956,8 @@ defmodule ExAws.CodePipeline do
         ) :: ExAws.Operation.JSON.t()
   def put_third_party_job_success_result(job_id, client_token, opts \\ []) do
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"jobId" => job_id, "clientToken" => client_token})
     |> request(:put_third_party_job_success_result)
   end
@@ -831,7 +1005,10 @@ defmodule ExAws.CodePipeline do
   """
   @spec put_webhook(webhook :: webhook_definition) :: ExAws.Operation.JSON.t()
   def put_webhook(webhook) do
-    details = camelize_keyword(webhook)
+    details =
+      webhook
+      |> Utils.keyword_to_map()
+      |> Utils.camelize_map()
 
     %{"webhook" => details}
     |> request(:put_webhook)
@@ -933,7 +1110,8 @@ defmodule ExAws.CodePipeline do
           ExAws.Operation.JSON.t()
   def start_pipeline_execution(name, opts \\ []) do
     opts
-    |> camelize_keyword()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"name" => name})
     |> request(:start_pipeline_execution)
   end
@@ -947,7 +1125,10 @@ defmodule ExAws.CodePipeline do
   """
   @spec update_pipeline(pipeline :: pipeline_declaration) :: ExAws.Operation.JSON.t()
   def update_pipeline(pipeline) do
-    details = camelize_keyword(pipeline)
+    details =
+      pipeline
+      |> Utils.keyword_to_map()
+      |> Utils.camelize_map()
 
     %{"pipeline" => details}
     |> request(:update_pipeline)
@@ -968,7 +1149,7 @@ defmodule ExAws.CodePipeline do
   defp request(data, action) do
     operation = action |> Atom.to_string() |> Macro.camelize()
 
-    ExAws.Operation.JSON.new(
+    ExAwsOperationJSON.new(
       :codepipeline,
       %{
         data: data,
@@ -978,42 +1159,5 @@ defmodule ExAws.CodePipeline do
         ]
       }
     )
-  end
-
-  # The API wants keywords in lower camel case format
-  # this function works thru a KeyWord which may have one
-  # layer of KeyWord within it and builds a map where keys
-  # are in this format.
-  #
-  # [test: [my_key: "val"]] becomes %{"test" => %{"myKey" => "val"}}
-  defp camelize_keyword(a_list) when is_list(a_list) or is_map(a_list) do
-    case Keyword.keyword?(a_list) or is_map(a_list) do
-      true ->
-        a_list
-        |> Enum.reduce(%{}, fn {k, v}, acc ->
-          k_str =
-            case is_atom(k) do
-              true ->
-                k |> Atom.to_string() |> Macro.camelize() |> decap()
-
-              false ->
-                k
-            end
-
-          Map.put(acc, k_str, camelize_keyword(v))
-        end)
-
-      false ->
-        a_list
-        |> Enum.reduce([], fn item, acc -> [camelize_keyword(item) | acc] end)
-        |> Enum.reverse()
-    end
-  end
-
-  defp camelize_keyword(val), do: val
-
-  defp decap(str) do
-    first = String.slice(str, 0..0) |> String.downcase()
-    first <> String.slice(str, 1..-1)
   end
 end

@@ -23,3 +23,5 @@ erl_crash.dump
 ex_aws_code_pipeline-*.tar
 
 /.elixir_ls
+
+.DS_Store
