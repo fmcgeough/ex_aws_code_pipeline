@@ -96,12 +96,41 @@ defmodule ExAws.CodePipeline do
           type: binary
         ]
 
-  @type action_type_setting :: [
-          entity_url_template: binary,
-          execution_url_template: binary,
-          revision_url_template: binary,
-          third_party_configuration_url: binary
-        ]
+  @typedoc """
+  URL used in `t:action_type_setting/0`
+
+  - Length Constraints: Minimum length of 1. Maximum length of 2048.
+  """
+  @type url_template() :: binary()
+
+  @typedoc """
+  Information about the settings for an action type
+
+  - entity_url_template - The URL returned to the CodePipeline console that provides a deep link to
+    the resources of the external system, such as the configuration page for a CodeDeploy deployment
+    group. This link is provided as part of the action display in the pipeline.
+  - execution_url_template - The URL returned to the CodePipeline console that contains a link to
+    the top-level landing page for the external system, such as the console page for CodeDeploy.
+    This link is shown on the pipeline view page in the CodePipeline console and provides a link to
+    the execution entity of the external action.
+  - revision_url_template - The URL returned to the CodePipeline console that contains a link to the
+    page where customers can update or change the configuration of the external action.
+  - third_party_configuration_url - The URL of a sign-up page where users can sign up for an
+    external service and perform initial configuration of the action provided by that service.
+  """
+  @type action_type_setting ::
+          [
+            entity_url_template: url_template(),
+            execution_url_template: url_template(),
+            revision_url_template: url_template(),
+            third_party_configuration_url: url_template()
+          ]
+          | %{
+              optional(:entity_url_template) => url_template(),
+              optional(:execution_url_template) => url_template(),
+              optional(:revision_url_template) => url_template(),
+              optional(:third_party_configuration_url) => url_template()
+            }
 
   @typedoc """
   Information about the details of an artifact
@@ -158,7 +187,15 @@ defmodule ExAws.CodePipeline do
           actions: [action_declaration, ...]
         ]
 
-  @type create_custom_action_type_opts ::
+  @typedoc """
+  Optional input to the `create_custom_action_type/5` function
+
+  Parameter can be provided as keyword or map.
+
+  - configuration_properties - The configuration properties for the custom action.
+  - settings - URLs that provide users information about this custom action
+  """
+  @type create_custom_action_type_optional ::
           [
             configuration_properties: [action_configuration_property()],
             settings: action_type_setting()
@@ -305,6 +342,67 @@ defmodule ExAws.CodePipeline do
         service: :codepipeline,
         before_request: nil
       }
+
+      iex> version = 1
+      iex> category = "Build"
+      iex> provider = "MyJenkinsProviderName"
+      iex> input_artifact_details = %{maximum_count: 1, minimum_count: 0}
+      iex> output_artifact_details = %{maximum_count: 1, minimum_count: 0}
+      iex> opts = [
+      ...>  settings: [
+      ...>    entity_url_template: "https://192.0.2.4/job/{Config:ProjectName}/",
+      ...>    execution_url_template: "https://192.0.2.4/job/{Config:ProjectName}/lastSuccessfulBuild/{ExternalExecutionId}/"
+      ...>  ],
+      ...>  configuration_properties: [
+      ...>    [
+      ...>      name: "MyJenkinsExampleBuildProject",
+      ...>      type: "String",
+      ...>      description: "The name of the build project must be provided when this action is added to the pipeline.",
+      ...>      key: true,
+      ...>      required: true,
+      ...>      secret: false,
+      ...>      queryable: false
+      ...>    ]
+      ...>  ]
+      ...> ]
+      iex> ExAws.CodePipeline.create_custom_action_type(category, provider, version, input_artifact_details, output_artifact_details, opts)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "category" => "Build",
+          "configurationProperties" => [
+            %{
+              "description" => "The name of the build project must be provided when this action is added to the pipeline.",
+              "key" => true,
+              "name" => "MyJenkinsExampleBuildProject",
+              "queryable" => false,
+              "required" => true,
+              "secret" => false,
+              "type" => "String"
+            }
+          ],
+          "inputArtifactDetails" => %{"maximumCount" => 1, "minimumCount" => 0},
+          "outputArtifactDetails" => %{"maximumCount" => 1, "minimumCount" => 0},
+          "provider" => "MyJenkinsProviderName",
+          "settings" => %{
+            "entityUrlTemplate" => "https://192.0.2.4/job/{Config:ProjectName}/",
+            "executionUrlTemplate" => "https://192.0.2.4/job/{Config:ProjectName}/lastSuccessfulBuild/{ExternalExecutionId}/"
+          },
+          "version" => 1
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodePipeline_20150709.CreateCustomActionType"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
+
   """
   @spec create_custom_action_type(
           category(),
@@ -312,7 +410,7 @@ defmodule ExAws.CodePipeline do
           version(),
           artifact_details(),
           artifact_details(),
-          create_custom_action_type_opts()
+          create_custom_action_type_optional()
         ) :: ExAws.Operation.JSON.t()
   def create_custom_action_type(
         category,
@@ -320,10 +418,10 @@ defmodule ExAws.CodePipeline do
         version,
         input_artifact_details,
         output_artifact_details,
-        opts \\ []
+        optional_data \\ %{}
       )
       when category in @valid_categories do
-    opts
+    optional_data
     |> Utils.keyword_to_map()
     |> Map.merge(%{
       category: category,

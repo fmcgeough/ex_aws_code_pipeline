@@ -9,6 +9,51 @@ defmodule ExAws.CodePipeline.Utils do
   @camelize_rules %{subkeys: @camelize_subkeys, default: :lower, keys: %{}}
 
   @typedoc """
+  Approach to camelization
+
+  - upper - all words are upper-cased
+  - lower - the first word is lower cased and the remaining words are upper-cased
+
+  ## Examples
+
+  <!-- tabs-open -->
+
+  ### :upper
+
+  ```
+  iex> camelize_rules = %{default: :upper}
+  iex> ExAws.CodePipeline.Utils.camelize(:test_things, camelize_rules)
+  "TestThings"
+
+  iex> camelize_rules = %{default: :upper}
+  iex> ExAws.CodePipeline.Utils.camelize(:abc, camelize_rules)
+  "Abc"
+
+  iex> camelize_rules = %{default: :upper}
+  iex> ExAws.CodePipeline.Utils.camelize("test-a-string", camelize_rules)
+  "TestAString"
+  ```
+
+  ### :lower
+
+  ```
+  iex> camelize_rules = %{default: :lower}
+  iex> ExAws.CodePipeline.Utils.camelize(:test_things, camelize_rules)
+  "testThings"
+
+  iex> camelize_rules = %{default: :lower}
+  iex> ExAws.CodePipeline.Utils.camelize(:abc, camelize_rules)
+  "abc"
+
+  iex> camelize_rules = %{default: :lower}
+  iex> ExAws.CodePipeline.Utils.camelize("test-a-string", camelize_rules)
+  "testAString"
+  ```
+  <!-- tabs-close -->
+  """
+  @type camelization() :: :upper | :lower
+
+  @typedoc """
   The camelize, camelize_list, and camelize_map take an argument that is
   a data structure providing rules for capitalization.
 
@@ -19,9 +64,9 @@ defmodule ExAws.CodePipeline.Utils do
   - default - indicates whether `:upper` or `:lower` is used by default
   """
   @type camelize_rules() :: %{
-          optional(:subkeys) => map(),
-          optional(:keys) => map(),
-          required(:default) => :upper | :lower
+          optional(:subkeys) => %{optional(atom()) => camelization()},
+          optional(:keys) => %{optional(atom()) => camelization()},
+          required(:default) => camelization()
         }
 
   @doc """
@@ -41,6 +86,8 @@ defmodule ExAws.CodePipeline.Utils do
   hyphen to separate words. This only works for atoms and
   strings. Passing another value type (integer, list, map)
   will raise exception.
+
+  The regex used to split a String into words is: `~r/(?:^|[-_])|(?=[A-Z])/`
 
   ## Example
 
@@ -71,7 +118,7 @@ defmodule ExAws.CodePipeline.Utils do
   end
 
   @doc """
-  Camelize Map keys, including traversing values that are also Maps.
+  Camelize keys, including traversing values that are also Maps.
 
   The caller can pass in an argument to indicate whether the first letter of a key for the map are
   downcased or capitalized.
