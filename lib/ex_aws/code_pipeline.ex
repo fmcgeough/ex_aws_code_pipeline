@@ -1,6 +1,33 @@
 defmodule ExAws.CodePipeline do
   @moduledoc """
-    Operations on AWS CodePipeline
+  Operations on AWS CodePipeline
+
+  The documentation and types provided lean heavily on the [AWS documentation for
+  CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Operations.html).
+  The AWS documentation is the definitive source of information and should be consulted to
+  understand how to use CodePipeline and its API functions.
+
+  Generally the functions take required parameters separately from any optional arguments. The
+  optional arguments are passed as a Map (with a defined type).
+
+  The defined types for the Maps used to pass optional arguments use the standard Elixir snake-case
+  for keys. The API itself uses camel-case Strings for keys. The library provides the conversion.
+  Most of the API keys use a lower-case letter for the first word and upper-case for the subsequent
+  words. If there are exceptions to this rule they are handled by the library so an Elixir
+  developer can just use standard snake-case for all the keys.
+
+  ## Description
+
+  AWS CodePipeline is a continuous delivery service you can use to model, visualize, and automate
+  the steps required to release your software. You can quickly model and configure the different
+  stages of a software release process. CodePipeline automates the steps required to release your
+  software changes continuously.
+
+  ## Resources
+
+  - [CodePipeline User Guide](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome.html)
+  - [CodePipeline API Reference Guide](https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Operations.html)
+  - [CLI Reference for CodePipeline}](https://docs.aws.amazon.com/cli/latest/reference/codepipeline/index.html)
   """
 
   # version of the AWS API
@@ -45,6 +72,25 @@ defmodule ExAws.CodePipeline do
   ```
   """
   @type category() :: binary()
+
+  @typedoc """
+  A `t:tag/0` key
+
+  - Length Constraints: Minimum length of 1. Maximum length of 128.
+  """
+  @type tag_key() :: binary()
+
+  @typedoc """
+  A `t:tag/0` value
+
+  - Length Constraints: Minimum length of 1. Maximum length of 256.
+  """
+  @type tag_value() :: binary()
+
+  @typedoc """
+  A tag is a key-value pair that is used to manage the resource.
+  """
+  @type tag() :: [key: tag_key(), value: tag_value()] | %{required(:key) => tag_key(), required(:value) => tag_value()}
 
   @typedoc """
   The provider of the service used in the custom action, such as CodeDeploy
@@ -437,11 +483,10 @@ defmodule ExAws.CodePipeline do
   @doc """
   Creates a pipeline
   """
-  @spec create_pipeline(pipeline :: pipeline_declaration) :: ExAws.Operation.JSON.t()
-  def create_pipeline(pipeline) do
-    details = pipeline |> Utils.keyword_to_map() |> Utils.camelize_map()
-
-    %{"pipeline" => details}
+  @spec create_pipeline(pipeline_declaration(), [tag()]) :: ExAws.Operation.JSON.t()
+  def create_pipeline(pipeline, tags \\ []) do
+    %{pipeline: Utils.keyword_to_map(pipeline), tags: Utils.keyword_to_map(tags)}
+    |> Utils.camelize_map()
     |> request(:create_pipeline)
   end
 

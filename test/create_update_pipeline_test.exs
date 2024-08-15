@@ -86,7 +86,8 @@ defmodule CreateUpdatePipelineTest do
           }
         ],
         "version" => 1
-      }
+      },
+      "tags" => %{}
     },
     params: %{},
     service: :codepipeline,
@@ -104,8 +105,13 @@ defmodule CreateUpdatePipelineTest do
   end
 
   test "update pipeline" do
+    # no tags in update_pipeline
+    data_without_tags = Map.delete(@expected.data, "tags")
+
     expected =
-      Map.put(@expected, :headers, [
+      @expected
+      |> Map.put(:data, data_without_tags)
+      |> Map.put(:headers, [
         {"x-amz-target", "CodePipeline_20150709.UpdatePipeline"},
         {"content-type", "application/x-amz-json-1.1"}
       ])
