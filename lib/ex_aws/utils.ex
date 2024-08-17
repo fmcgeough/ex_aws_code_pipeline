@@ -6,7 +6,11 @@ defmodule ExAws.CodePipeline.Utils do
   # There are keys that are encountered that have special rules for capitalizing
   # for subkeys found in them.
   @camelize_subkeys %{}
-  @camelize_rules %{subkeys: @camelize_subkeys, default: :lower, keys: %{}}
+  @camelize_rules %{
+    subkeys: @camelize_subkeys,
+    default: :lower,
+    keys: %{s3_bucket: :upper, s3_object_key: :upper}
+  }
 
   @typedoc """
   Approach to camelization
@@ -94,23 +98,25 @@ defmodule ExAws.CodePipeline.Utils do
       iex> ExAws.CodePipeline.Utils.camelize(:test_val)
       "testVal"
 
-      iex> ExAws.CodePipeline.Utils.camelize("test_val")
+      iex> ExAws.CodePipeline.Utils.camelize(:"test_val")
       "testVal"
 
-      iex> ExAws.CodePipeline.Utils.camelize("abc-def-a123")
+      iex> ExAws.CodePipeline.Utils.camelize(:"abc-def-a123")
       "abcDefA123"
 
       iex> ExAws.CodePipeline.Utils.camelize(:A_test_of_initial_cap)
       "aTestOfInitialCap"
   """
-  def camelize(val, camelize_rules \\ @camelize_rules)
-
-  def camelize(val, camelize_rules) when is_atom(val) do
-    camelization = camelization_for_val(val, camelize_rules)
-    val |> to_string() |> camelize(%{camelize_rules | default: camelization})
+  def camelize(val, camelize_rules \\ @camelize_rules) do
+    if is_atom(val) do
+      camelization = camelization_for_val(val, camelize_rules)
+      val |> to_string() |> string_camelize(%{camelize_rules | default: camelization})
+    else
+      val
+    end
   end
 
-  def camelize(val, camelize_rules) when is_binary(val) do
+  def string_camelize(val, camelize_rules) when is_binary(val) do
     ~r/(?:^|[-_])|(?=[A-Z])/
     |> Regex.split(val, trim: true)
     |> camelize_split_string(camelize_rules.default)
@@ -178,6 +184,9 @@ defmodule ExAws.CodePipeline.Utils do
   """
   def keyword_to_map(val) do
     cond do
+      val == [] ->
+        []
+
       Keyword.keyword?(val) ->
         Enum.map(val, fn {k, v} ->
           {k, keyword_to_map(v)}

@@ -5,38 +5,64 @@ defmodule CreateUpdatePipelineTest do
   # key is a user string and not predefined atom. This is the case for
   # all pieces of input data that use a user defined string as a key.
   @pipeline [
-    artifact_store: [
-      encryption_key: [id: "string", type: "string"],
-      location: "string",
-      type: "string"
-    ],
-    artifact_stores: %{
-      "mykey" => [
-        encryption_key: [id: "string", type: "string"],
-        location: "string",
-        type: "string"
-      ]
-    },
-    name: "string",
-    role_arn: "string",
+    role_arn: "arn:aws:iam::111111111111:role/AWS-CodePipeline-Service",
     stages: [
       [
-        name: "string",
-        blockers: [[name: "string", type: "string"]],
+        name: "Source",
         actions: [
           [
-            action_type_id: [category: "string", owner: "string", provider: "string", version: "string"],
-            name: "string",
-            configuration: %{"string" => "string"},
-            input_artifacts: [[name: "string"]],
-            output_artificats: [[name: "string"]],
-            region: "string",
-            role_arn: "string",
-            run_order: 12
+            input_artifacts: [],
+            name: "Source",
+            action_type_id: [
+              category: "Source",
+              owner: "AWS",
+              version: "1",
+              provider: "S3"
+            ],
+            output_artifacts: [
+              [
+                name: "MyApp"
+              ]
+            ],
+            configuration: %{
+              "S3Bucket" => "awscodepipeline-demo-bucket",
+              "S3ObjectKey" => "aws-codepipeline-s3-aws-codedeploy_linux.zip"
+            },
+            run_order: 1
+          ]
+        ]
+      ],
+      [
+        name: "Beta",
+        actions: [
+          [
+            input_artifacts: [
+              [
+                name: "MyApp"
+              ]
+            ],
+            name: "CodePipelineDemoFleet",
+            action_type_id: [
+              category: "Deploy",
+              owner: "AWS",
+              version: "1",
+              provider: "CodeDeploy"
+            ],
+            output_artifacts: [],
+            configuration: [
+              application_name: "CodePipelineDemoApplication",
+              deployment_group_name: "CodePipelineDemoFleet"
+            ],
+            run_order: 1
           ]
         ]
       ]
     ],
+    artifact_store: [
+      type: "S3",
+      location: "codepipeline-us-east-1-11EXAMPLE11"
+    ],
+    name: "MySecondPipeline",
     version: 1
   ]
 
@@ -49,47 +75,64 @@ defmodule CreateUpdatePipelineTest do
     data: %{
       "pipeline" => %{
         "artifactStore" => %{
-          "encryptionKey" => %{"id" => "string", "type" => "string"},
-          "location" => "string",
-          "type" => "string"
+          "location" => "codepipeline-us-east-1-11EXAMPLE11",
+          "type" => "S3"
         },
-        "artifactStores" => %{
-          "mykey" => %{
-            "encryptionKey" => %{"id" => "string", "type" => "string"},
-            "location" => "string",
-            "type" => "string"
-          }
-        },
-        "name" => "string",
-        "roleArn" => "string",
+        "name" => "MySecondPipeline",
+        "roleArn" => "arn:aws:iam::111111111111:role/AWS-CodePipeline-Service",
         "stages" => [
           %{
             "actions" => [
               %{
                 "actionTypeId" => %{
-                  "category" => "string",
-                  "owner" => "string",
-                  "provider" => "string",
-                  "version" => "string"
+                  "category" => "Source",
+                  "owner" => "AWS",
+                  "provider" => "S3",
+                  "version" => "1"
                 },
-                "configuration" => %{"string" => "string"},
-                "inputArtifacts" => [%{"name" => "string"}],
-                "name" => "string",
-                "outputArtificats" => [%{"name" => "string"}],
-                "region" => "string",
-                "roleArn" => "string",
-                "runOrder" => 12
+                "configuration" => %{
+                  "S3Bucket" => "awscodepipeline-demo-bucket",
+                  "S3ObjectKey" => "aws-codepipeline-s3-aws-codedeploy_linux.zip"
+                },
+                "inputArtifacts" => [],
+                "name" => "Source",
+                "outputArtifacts" => [%{"name" => "MyApp"}],
+                "runOrder" => 1
               }
             ],
-            "blockers" => [%{"name" => "string", "type" => "string"}],
-            "name" => "string"
+            "name" => "Source"
+          },
+          %{
+            "actions" => [
+              %{
+                "actionTypeId" => %{
+                  "category" => "Deploy",
+                  "owner" => "AWS",
+                  "provider" => "CodeDeploy",
+                  "version" => "1"
+                },
+                "configuration" => %{
+                  "applicationName" => "CodePipelineDemoApplication",
+                  "deploymentGroupName" => "CodePipelineDemoFleet"
+                },
+                "inputArtifacts" => [%{"name" => "MyApp"}],
+                "name" => "CodePipelineDemoFleet",
+                "outputArtifacts" => [],
+                "runOrder" => 1
+              }
+            ],
+            "name" => "Beta"
           }
         ],
         "version" => 1
       },
-      "tags" => %{}
+      "tags" => []
     },
     params: %{},
+    headers: [
+      {"x-amz-target", "CodePipeline_20150709.CreatePipeline"},
+      {"content-type", "application/x-amz-json-1.1"}
+    ],
     service: :codepipeline,
     before_request: nil
   }
