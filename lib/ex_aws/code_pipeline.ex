@@ -589,13 +589,13 @@ defmodule ExAws.CodePipeline do
       )
       when category in @valid_categories do
     optional_data
-    |> Utils.keyword_to_map()
+    |> keyword_to_map()
     |> Map.merge(%{
       category: category,
       provider: provider,
       version: version,
-      input_artifact_details: Utils.keyword_to_map(input_artifact_details),
-      output_artifact_details: Utils.keyword_to_map(output_artifact_details)
+      input_artifact_details: keyword_to_map(input_artifact_details),
+      output_artifact_details: keyword_to_map(output_artifact_details)
     })
     |> Utils.camelize_map()
     |> request(:create_custom_action_type)
@@ -864,11 +864,11 @@ defmodule ExAws.CodePipeline do
   def create_pipeline(pipeline, tags \\ []) do
     tags =
       case Enum.empty?(tags) do
-        false -> Enum.map(tags, &Utils.keyword_to_map/1)
+        false -> Enum.map(tags, &keyword_to_map/1)
         true -> []
       end
 
-    %{pipeline: Utils.keyword_to_map(pipeline), tags: tags}
+    %{pipeline: keyword_to_map(pipeline), tags: tags}
     |> Utils.camelize_map()
     |> request(:create_pipeline)
   end
@@ -1078,10 +1078,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec get_pipeline(binary(), get_pipeline_options()) :: ExAws.Operation.JSON.t()
   def get_pipeline(name, opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Map.merge(%{name: name})
     |> Utils.camelize_map()
     |> request(:get_pipeline)
@@ -1172,10 +1170,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec list_action_types(list_action_types_options()) :: ExAws.Operation.JSON.t()
   def list_action_types(opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Utils.camelize_map()
     |> request(:list_action_types)
   end
@@ -1204,10 +1200,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec list_pipeline_executions(binary(), list_pipeline_executions_options()) :: ExAws.Operation.JSON.t()
   def list_pipeline_executions(pipeline_name, opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Map.merge(%{pipeline_name: pipeline_name})
     |> Utils.camelize_map()
     |> request(:list_pipeline_executions)
@@ -1237,10 +1231,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec list_pipelines(paging_options()) :: ExAws.Operation.JSON.t()
   def list_pipelines(opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Utils.camelize_map()
     |> request(:list_pipelines)
   end
@@ -1271,10 +1263,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec list_webhooks(list_webhooks_options()) :: ExAws.Operation.JSON.t()
   def list_webhooks(opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Utils.camelize_map()
     |> request(:list_webhooks)
   end
@@ -1313,12 +1303,10 @@ defmodule ExAws.CodePipeline do
   """
   @spec poll_for_jobs(action_type_id(), poll_for_jobs_opts()) :: ExAws.Operation.JSON.t()
   def poll_for_jobs(action_type_id, opts \\ []) do
-    action_type_data = %{action_type_id: Utils.keyword_to_map(action_type_id)}
+    action_type_data = %{action_type_id: keyword_to_map(action_type_id)}
 
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Map.merge(action_type_data)
     |> Utils.camelize_map()
     |> request(:poll_for_jobs)
@@ -1364,13 +1352,11 @@ defmodule ExAws.CodePipeline do
   def poll_for_third_party_jobs(action_type_id, opts \\ []) do
     action_type_data =
       action_type_id
-      |> Utils.keyword_to_map()
+      |> keyword_to_map()
       |> Utils.camelize_map()
 
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Map.merge(%{action_type_id: action_type_data})
     |> Utils.camelize_map()
     |> request(:poll_for_third_party_jobs)
@@ -1442,7 +1428,7 @@ defmodule ExAws.CodePipeline do
   @spec put_job_failure_result(binary(), failure_details()) :: ExAws.Operation.JSON.t()
   def put_job_failure_result(job_id, failure_details) do
     failure_details
-    |> Utils.keyword_to_map()
+    |> keyword_to_map()
     |> Map.merge(%{job_id: job_id})
     |> Utils.camelize_map()
     |> request(:put_job_failure_result)
@@ -1454,10 +1440,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec put_job_success_result(binary(), put_job_success_result_opts()) :: ExAws.Operation.JSON.t()
   def put_job_success_result(job_id, opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Map.merge(%{job_id: job_id})
     |> Utils.camelize_map()
     |> request(:put_job_success_result)
@@ -1471,7 +1455,7 @@ defmodule ExAws.CodePipeline do
   def put_third_party_job_failure_result(job_id, client_token, failure_details) do
     details =
       failure_details
-      |> Utils.keyword_to_map()
+      |> keyword_to_map()
       |> Utils.camelize_map()
 
     %{"jobId" => job_id, "clientToken" => client_token, "failureDetails" => details}
@@ -1485,10 +1469,8 @@ defmodule ExAws.CodePipeline do
   @spec put_third_party_job_success_result(binary(), binary(), put_third_party_job_success_result_opts()) ::
           ExAws.Operation.JSON.t()
   def put_third_party_job_success_result(job_id, client_token, opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Map.merge(%{job_id: job_id, client_token: client_token})
     |> Utils.camelize_map()
     |> request(:put_third_party_job_success_result)
@@ -1521,7 +1503,7 @@ defmodule ExAws.CodePipeline do
   def put_webhook(webhook) do
     details =
       webhook
-      |> Utils.keyword_to_map()
+      |> keyword_to_map()
       |> Utils.camelize_map()
 
     %{"webhook" => details}
@@ -1603,10 +1585,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec start_pipeline_execution(binary(), start_pipeline_execution_opts()) :: ExAws.Operation.JSON.t()
   def start_pipeline_execution(name, opts \\ []) do
-    case Enum.empty?(opts) do
-      true -> %{}
-      false -> Utils.keyword_to_map(opts)
-    end
+    opts
+    |> keyword_to_map()
     |> Map.merge(%{name: name})
     |> Utils.camelize_map()
     |> request(:start_pipeline_execution)
@@ -1623,7 +1603,7 @@ defmodule ExAws.CodePipeline do
   def update_pipeline(pipeline) do
     details =
       pipeline
-      |> Utils.keyword_to_map()
+      |> keyword_to_map()
       |> Utils.camelize_map()
 
     %{"pipeline" => details}
@@ -1641,6 +1621,10 @@ defmodule ExAws.CodePipeline do
   def direct_request(action, data) do
     request(data, action)
   end
+
+  defp keyword_to_map(data) when is_map(data), do: data
+  defp keyword_to_map([]), do: %{}
+  defp keyword_to_map(data), do: Utils.keyword_to_map(data)
 
   defp request(data, action) do
     operation = action |> Atom.to_string() |> Macro.camelize()
