@@ -64,6 +64,60 @@ defmodule ExAws.CodePipeline do
   @type client_token() :: binary()
 
   @typedoc """
+  The Amazon Resource Name (ARN) for CodePipeline to use to either perform actions with
+  no action_role_arn, or to use to assume roles for actions with an action_role_arn.
+
+  - Length Constraints: Maximum length of 1024.
+  - Pattern: arn:aws(-[\w]+)*:iam::[0-9]{12}:role/.*
+  """
+  @type role_arn() :: binary()
+
+  @typedoc """
+  The name of the pipeline
+
+  - Length Constraints: Minimum length of 1. Maximum length of 100.
+  - Pattern: [A-Za-z0-9.@\-_]+
+  """
+  @type pipeline_name() :: binary()
+
+  @typedoc """
+  The name of a webhook
+
+  - Length Constraints: Minimum length of 1. Maximum length of 100.
+  - Pattern: [A-Za-z0-9.@\-_]+
+  """
+  @type webhook_name() :: binary()
+
+  @typedoc """
+  The name of the stage
+
+  - Length Constraints: Minimum length of 1. Maximum length of 100.
+  - Pattern: [A-Za-z0-9.@\-_]+
+  """
+  @type stage_name() :: binary()
+
+  @typedoc """
+  Specifies whether artifacts are prevented from transitioning into the stage and being processed by
+  the actions in that stage (inbound), or prevented from transitioning from the stage after they
+  have been processed by the actions in that stage (outbound).
+
+  Valid Values
+  ```
+  ["Inbound", "Outbound"]
+  ```
+  """
+  @type transition_type() :: binary()
+
+  @typedoc """
+  The reason given to the user that a stage is disabled, such as waiting for manual approval or
+  manual tests. This message is displayed in the pipeline console UI.
+
+  - Length Constraints: Minimum length of 1. Maximum length of 300.
+  - Pattern: [a-zA-Z0-9!@ \(\)\.\*\?\-]+
+  """
+  @type disabled_reason() :: binary()
+
+  @typedoc """
   The category of the custom action, such as a build action or a test action.
 
   ### Valid Values
@@ -118,8 +172,9 @@ defmodule ExAws.CodePipeline do
   @type list_pipeline_executions_options :: [
           max_results: binary,
           next_token: binary,
-          pipeline_name: binary
+          pipeline_name: pipeline_name()
         ]
+
   @type get_pipeline_options :: [
           version: integer
         ]
@@ -274,23 +329,6 @@ defmodule ExAws.CodePipeline do
             }
 
   @typedoc """
-  The Amazon Resource Name (ARN) for CodePipeline to use to either perform actions with
-  no action_role_arn, or to use to assume roles for actions with an action_role_arn.
-
-  - Length Constraints: Maximum length of 1024.
-  - Pattern: arn:aws(-[\w]+)*:iam::[0-9]{12}:role/.*
-  """
-  @type role_arn() :: binary()
-
-  @typedoc """
-  The name of the pipeline
-
-  - Length Constraints: Minimum length of 1. Maximum length of 100.
-  - Pattern: [A-Za-z0-9.@\-_]+
-  """
-  @type pipeline_name() :: binary()
-
-  @typedoc """
   Represents the structure of actions and stages to be performed in the pipeline.
   """
   @type pipeline_declaration ::
@@ -376,7 +414,7 @@ defmodule ExAws.CodePipeline do
           authentication: binary,
           authentication_configuration: authentication_configuration,
           filters: [webhook_filter_rule, ...],
-          name: binary,
+          name: webhook_name(),
           target_action: binary,
           target_pipeline: binary
         ]
@@ -450,6 +488,11 @@ defmodule ExAws.CodePipeline do
 
   ## Examples
 
+  The examples below demonstrate using `create_custom_action_type/6` where the final parameter
+  (containing optional data) uses either Map data structure or Keyword list. Both produce the same
+  output.
+
+      iex> alias ExAws.CodePipeline
       iex> version = 1
       iex> category = "Build"
       iex> provider = "MyJenkinsProviderName"
@@ -457,7 +500,7 @@ defmodule ExAws.CodePipeline do
       iex> output_artifact_details = %{maximum_count: 1, minimum_count: 0}
       iex> opts = %{
       ...>  settings: %{
-      ...>entity_url_template: "https://192.0.2.4/job/{Config:ProjectName}/",
+      ...>    entity_url_template: "https://192.0.2.4/job/{Config:ProjectName}/",
       ...>    execution_url_template: "https://192.0.2.4/job/{Config:ProjectName}/lastSuccessfulBuild/{ExternalExecutionId}/"
       ...> },
       ...> configuration_properties: [
@@ -472,7 +515,10 @@ defmodule ExAws.CodePipeline do
       ...>    }
       ...>  ]
       ...> }
-      iex> ExAws.CodePipeline.create_custom_action_type(category, provider, version, input_artifact_details, output_artifact_details, opts)
+      iex> map_result = CodePipeline.create_custom_action_type(category, provider, version,
+      ...>                                                     input_artifact_details,
+      ...>                                                     output_artifact_details,
+      ...>                                                     opts)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -509,13 +555,7 @@ defmodule ExAws.CodePipeline do
         service: :codepipeline,
         before_request: nil
       }
-
-      iex> version = 1
-      iex> category = "Build"
-      iex> provider = "MyJenkinsProviderName"
-      iex> input_artifact_details = %{maximum_count: 1, minimum_count: 0}
-      iex> output_artifact_details = %{maximum_count: 1, minimum_count: 0}
-      iex> opts = [
+      iex> keyword_opts = [
       ...>  settings: [
       ...>    entity_url_template: "https://192.0.2.4/job/{Config:ProjectName}/",
       ...>    execution_url_template: "https://192.0.2.4/job/{Config:ProjectName}/lastSuccessfulBuild/{ExternalExecutionId}/"
@@ -531,45 +571,13 @@ defmodule ExAws.CodePipeline do
       ...>      queryable: false
       ...>    ]
       ...>  ]
-      ...> ]
-      iex> ExAws.CodePipeline.create_custom_action_type(category, provider, version, input_artifact_details, output_artifact_details, opts)
-      %ExAws.Operation.JSON{
-        stream_builder: nil,
-        http_method: :post,
-        parser: &Function.identity/1,
-        error_parser: &Function.identity/1,
-        path: "/",
-        data: %{
-          "category" => "Build",
-          "configurationProperties" => [
-            %{
-              "description" => "The name of the build project must be provided when this action is added to the pipeline.",
-              "key" => true,
-              "name" => "MyJenkinsExampleBuildProject",
-              "queryable" => false,
-              "required" => true,
-              "secret" => false,
-              "type" => "String"
-            }
-          ],
-          "inputArtifactDetails" => %{"maximumCount" => 1, "minimumCount" => 0},
-          "outputArtifactDetails" => %{"maximumCount" => 1, "minimumCount" => 0},
-          "provider" => "MyJenkinsProviderName",
-          "settings" => %{
-            "entityUrlTemplate" => "https://192.0.2.4/job/{Config:ProjectName}/",
-            "executionUrlTemplate" => "https://192.0.2.4/job/{Config:ProjectName}/lastSuccessfulBuild/{ExternalExecutionId}/"
-          },
-          "version" => 1
-        },
-        params: %{},
-        headers: [
-          {"x-amz-target", "CodePipeline_20150709.CreateCustomActionType"},
-          {"content-type", "application/x-amz-json-1.1"}
-        ],
-        service: :codepipeline,
-        before_request: nil
-      }
-
+      ...>]
+      iex> keyword_result = CodePipeline.create_custom_action_type(category, provider, version,
+      ...>                                                         input_artifact_details,
+      ...>                                                         output_artifact_details,
+      ...>                                                         keyword_opts)
+      iex> map_result == keyword_result
+      true
   """
   @spec create_custom_action_type(
           category(),
@@ -609,7 +617,10 @@ defmodule ExAws.CodePipeline do
 
   ## Examples
 
-      iex> pipeline = %{
+  The examples below demonstrate using `create_pipeline/1` with either Map data
+  structure or Keyword list. Both produce the same output.
+
+      iex> maps_pipeline_result = %{
       ...>  role_arn: "arn:aws:iam::111111111111:role/AWS-CodePipeline-Service",
       ...>  stages: [
       ...>    %{
@@ -660,8 +671,7 @@ defmodule ExAws.CodePipeline do
       ...>      ]
       ...>    }
       ...>  ]
-      ...>}
-      iex> ExAws.CodePipeline.create_pipeline(pipeline)
+      ...>} |> ExAws.CodePipeline.create_pipeline()
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -731,8 +741,7 @@ defmodule ExAws.CodePipeline do
         service: :codepipeline,
         before_request: nil
       }
-
-      iex> pipeline = [
+      iex> keyword_pipeline_result = [
       ...>  role_arn: "arn:aws:iam::111111111111:role/AWS-CodePipeline-Service",
       ...>  stages: [
       ...>    [
@@ -788,77 +797,9 @@ defmodule ExAws.CodePipeline do
       ...>      version: 1
       ...>    ]
       ...>  ]
-      ...>]
-      iex> ExAws.CodePipeline.create_pipeline(pipeline)
-      %ExAws.Operation.JSON{
-        stream_builder: nil,
-        http_method: :post,
-        parser: &Function.identity/1,
-        error_parser: &Function.identity/1,
-        path: "/",
-        data: %{
-          "pipeline" => %{
-            "roleArn" => "arn:aws:iam::111111111111:role/AWS-CodePipeline-Service",
-            "stages" => [
-              %{
-                "actions" => [
-                  %{
-                    "actionTypeId" => %{
-                      "category" => "Source",
-                      "owner" => "AWS",
-                      "provider" => "S3",
-                      "version" => "1"
-                    },
-                    "configuration" => %{
-                      "S3Bucket" => "awscodepipeline-demo-bucket",
-                      "S3ObjectKey" => "aws-codepipeline-s3-aws-codedeploy_linux.zip"
-                    },
-                    "inputArtifacts" => [],
-                    "name" => "Source",
-                    "outputArtifacts" => [%{"name" => "MyApp"}],
-                    "runOrder" => 1
-                  }
-                ],
-                "name" => "Source"
-              },
-              %{
-                "actions" => [
-                  %{
-                    "actionTypeId" => %{
-                      "category" => "Deploy",
-                      "owner" => "AWS",
-                      "provider" => "CodeDeploy",
-                      "version" => "1"
-                    },
-                    "configuration" => %{
-                      "ApplicationName" => "CodePipelineDemoApplication",
-                      "DeploymentGroupName" => "CodePipelineDemoFleet"
-                    },
-                    "inputArtifacts" => [%{"name" => "MyApp"}],
-                    "name" => "CodePipelineDemoFleet",
-                    "outputArtifacts" => [],
-                    "runOrder" => 1
-                  }
-                ],
-                "artifactStore" => %{
-                  "location" => "codepipeline-us-east-1-11EXAMPLE11",
-                  "type" => "S3"
-                },
-                "name" => "MySecondPipeline",
-                "version" => 1
-              }
-            ]
-          },
-          "tags" => []
-        },
-        params: %{},
-        headers: [
-          {"x-amz-target", "CodePipeline_20150709.CreatePipeline"},
-          {"content-type", "application/x-amz-json-1.1"}
-        ],
-        service: :codepipeline,
-        before_request: nil
-      }
+      ...>] |> ExAws.CodePipeline.create_pipeline()
+      iex> keyword_pipeline_result == maps_pipeline_result
+      true
   """
   @spec create_pipeline(pipeline_declaration(), [tag()]) :: ExAws.Operation.JSON.t()
   def create_pipeline(pipeline, tags \\ []) do
@@ -923,7 +864,7 @@ defmodule ExAws.CodePipeline do
           {"content-type", "application/x-amz-json-1.1"}
         ]
   """
-  @spec delete_pipeline(binary()) :: ExAws.Operation.JSON.t()
+  @spec delete_pipeline(pipeline_name()) :: ExAws.Operation.JSON.t()
   def delete_pipeline(name) do
     %{"name" => name}
     |> request(:delete_pipeline)
@@ -934,17 +875,25 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.delete_webhook("MyWebhook")
-        iex> op.data
-        %{"name" => "MyWebhook"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.delete_webhook("MyWebhook")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"name" => "MyWebhook"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.DeleteWebhook"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @spec delete_webhook(binary()) :: ExAws.Operation.JSON.t()
-  def delete_webhook(name) do
+  @spec delete_webhook(webhook_name()) :: ExAws.Operation.JSON.t()
+  def delete_webhook(name) when is_binary(name) do
     %{"name" => name}
     |> request(:delete_webhook)
   end
@@ -956,17 +905,25 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.deregister_webhook_with_third_party("MyWebhook")
-        iex> op.data
-        %{"webhookName" => "MyWebhook"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.deregister_webhook_with_third_party("MyWebhook")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"webhookName" => "MyWebhook"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.DeregisterWebhookWithThirdParty"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @spec deregister_webhook_with_third_party(binary()) :: ExAws.Operation.JSON.t()
-  def deregister_webhook_with_third_party(name) do
+  @spec deregister_webhook_with_third_party(webhook_name()) :: ExAws.Operation.JSON.t()
+  def deregister_webhook_with_third_party(name) when is_binary(name) do
     %{"webhookName" => name}
     |> request(:deregister_webhook_with_third_party)
   end
@@ -976,21 +933,30 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.disable_stage_transition("pipeline", "stage", "Inbound", "Removing")
-        iex> op.data
-        %{
+      iex> ExAws.CodePipeline.disable_stage_transition("pipeline", "stage", "Inbound", "Removing")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
           "pipelineName" => "pipeline",
+          "reason" => "Removing",
           "stageName" => "stage",
-          "transitionType" => "Inbound",
-          "reason" => "Removing"
-        }
-        iex> op.headers
-        [
+          "transitionType" => "Inbound"
+        },
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.DisableStageTransition"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @spec disable_stage_transition(binary(), binary(), binary(), binary()) :: ExAws.Operation.JSON.t()
+  @spec disable_stage_transition(pipeline_name(), stage_name(), transition_type(), disabled_reason()) ::
+          ExAws.Operation.JSON.t()
   def disable_stage_transition(pipeline_name, stage_name, transition_type, reason)
       when transition_type in ["Inbound", "Outbound"] do
     %{
@@ -1007,20 +973,28 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.enable_stage_transition("pipeline", "stage", "Inbound")
-        iex> op.data
-        %{
+      iex> ExAws.CodePipeline.enable_stage_transition("pipeline", "stage", "Inbound")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
           "pipelineName" => "pipeline",
           "stageName" => "stage",
           "transitionType" => "Inbound"
-        }
-        iex> op.headers
-        [
+        },
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.EnableStageTransition"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @spec enable_stage_transition(binary(), binary(), binary()) :: ExAws.Operation.JSON.t()
+  @spec enable_stage_transition(pipeline_name(), stage_name(), transition_type()) :: ExAws.Operation.JSON.t()
   def enable_stage_transition(pipeline_name, stage_name, transition_type)
       when transition_type in ["Inbound", "Outbound"] do
     %{
@@ -1101,8 +1075,7 @@ defmodule ExAws.CodePipeline do
           {"content-type", "application/x-amz-json-1.1"}
         ]
   """
-  @spec get_pipeline_execution(pipeline_name :: binary, pipeline_execution_id :: binary) ::
-          ExAws.Operation.JSON.t()
+  @spec get_pipeline_execution(pipeline_name(), binary()) :: ExAws.Operation.JSON.t()
   def get_pipeline_execution(pipeline_name, pipeline_execution_id) do
     %{"pipelineExecutionId" => pipeline_execution_id, "pipelineName" => pipeline_name}
     |> request(:get_pipeline_execution)
@@ -1198,7 +1171,7 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec list_pipeline_executions(binary(), list_pipeline_executions_options()) :: ExAws.Operation.JSON.t()
+  @spec list_pipeline_executions(pipeline_name(), list_pipeline_executions_options()) :: ExAws.Operation.JSON.t()
   def list_pipeline_executions(pipeline_name, opts \\ []) do
     opts
     |> keyword_to_map()
@@ -1365,7 +1338,7 @@ defmodule ExAws.CodePipeline do
   @doc """
     Provides information to AWS CodePipeline about new revisions to a source
   """
-  @spec put_action_revision(binary(), binary(), binary(), action_revision()) :: ExAws.Operation.JSON.t()
+  @spec put_action_revision(pipeline_name(), binary(), binary(), action_revision()) :: ExAws.Operation.JSON.t()
   def put_action_revision(pipeline_name, stage_name, action_name, action_revision) do
     revision_details =
       action_revision
@@ -1385,7 +1358,8 @@ defmodule ExAws.CodePipeline do
   Provides the response to a manual approval request to AWS CodePipeline.
   Valid responses include Approved and Rejected.
   """
-  @spec put_approval_result(binary(), binary(), binary(), binary(), approval_result()) :: ExAws.Operation.JSON.t()
+  @spec put_approval_result(pipeline_name(), binary(), binary(), binary(), approval_result()) ::
+          ExAws.Operation.JSON.t()
   def put_approval_result(pipeline_name, stage_name, action_name, token, result) do
     %{
       "pipelineName" => pipeline_name,
@@ -1525,7 +1499,7 @@ defmodule ExAws.CodePipeline do
           {"content-type", "application/x-amz-json-1.1"}
         ]
   """
-  @spec register_webhook_with_third_party(webhook_name :: binary) :: ExAws.Operation.JSON.t()
+  @spec register_webhook_with_third_party(webhook_name()) :: ExAws.Operation.JSON.t()
   def register_webhook_with_third_party(webhook_name) do
     %{"webhookName" => webhook_name}
     |> request(:register_webhook_with_third_party)
@@ -1551,7 +1525,7 @@ defmodule ExAws.CodePipeline do
           {"content-type", "application/x-amz-json-1.1"}
         ]
   """
-  @spec retry_stage_execution(binary(), binary(), binary(), binary()) :: ExAws.Operation.JSON.t()
+  @spec retry_stage_execution(pipeline_name(), binary(), binary(), binary()) :: ExAws.Operation.JSON.t()
   def retry_stage_execution(pipeline_name, stage_name, pipeline_execution_id, retry_mode \\ "FAILED_ACTIONS") do
     %{
       "pipelineExecutionId" => pipeline_execution_id,
