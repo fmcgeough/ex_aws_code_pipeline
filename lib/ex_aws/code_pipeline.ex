@@ -815,10 +815,10 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Marks a custom action as deleted.
+  Marks a custom action as deleted.
 
-    `PollForJobs` for the custom action will fail after the action
-    is marked for deletion. Only used for custom actions.
+  `PollForJobs` for the custom action will fail after the action
+  is marked for deletion. Only used for custom actions.
 
   ## Examples:
 
@@ -851,7 +851,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Deletes the specified pipeline.
+  Deletes the specified pipeline.
 
   ## Examples:
 
@@ -879,7 +879,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Deletes a web hook.
+  Deletes a web hook.
 
   ## Examples:
 
@@ -907,9 +907,9 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Removes the connection between the webhook that was created by CodePipeline
-    and the external tool with events to be detected. Currently only supported
-    for webhooks that target an action type of GitHub.
+  Removes the connection between the webhook that was created by CodePipeline
+  and the external tool with events to be detected. Currently only supported
+  for webhooks that target an action type of GitHub.
 
   ## Examples:
 
@@ -937,7 +937,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Prevents artifacts in a pipeline from transitioning to the next stage in the pipeline.
+  Prevents artifacts in a pipeline from transitioning to the next stage in the pipeline.
 
   ## Examples:
 
@@ -977,7 +977,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Enables artifacts in a pipeline to transition to a stage in a pipeline.
+  Enables artifacts in a pipeline to transition to a stage in a pipeline.
 
   ## Examples:
 
@@ -1014,14 +1014,14 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Returns information about a job. Only used for custom actions.
+  Returns information about a job. Only used for custom actions.
 
-    ## Important
+  ## Important
 
-    When this API is called, AWS CodePipeline returns temporary credentials for
-    the Amazon S3 bucket used to store artifacts for the pipeline, if the action
-    requires access to that Amazon S3 bucket for input or output artifacts.
-    Additionally, this API returns any secret values defined for the action.
+  When this API is called, AWS CodePipeline returns temporary credentials for
+  the Amazon S3 bucket used to store artifacts for the pipeline, if the action
+  requires access to that Amazon S3 bucket for input or output artifacts.
+  Additionally, this API returns any secret values defined for the action.
 
   ## Examples:
 
@@ -1049,11 +1049,11 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Returns the metadata, structure, stages, and actions of a pipeline.
+  Returns the metadata, structure, stages, and actions of a pipeline.
 
-    Can be used to return the entire structure of a pipeline in JSON format,
-    which can then be modified and used to update the pipeline structure
-    with update_pipeline.
+  Can be used to return the entire structure of a pipeline in JSON format,
+  which can then be modified and used to update the pipeline structure
+  with update_pipeline.
 
   ## Examples:
 
@@ -1084,9 +1084,9 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Returns information about an execution of a pipeline, including details
-    about artifacts, the pipeline execution ID, and the name, version, and
-    status of the pipeline.
+  Returns information about an execution of a pipeline, including details
+  about artifacts, the pipeline execution ID, and the name, version, and
+  status of the pipeline.
 
   ## Examples:
 
@@ -1117,7 +1117,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Returns information about the state of a pipeline, including the stages and actions.
+  Returns information about the state of a pipeline, including the stages and actions.
 
   ## Examples:
 
@@ -1145,12 +1145,12 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Requests the details of a job for a third party action. Only used for partner actions.
+  Requests the details of a job for a third party action. Only used for partner actions.
 
-    IMPORTANT: When this API is called, AWS CodePipeline returns temporary credentials
-    for the Amazon S3 bucket used to store artifacts for the pipeline, if the action
-    requires access to that Amazon S3 bucket for input or output artifacts. Additionally,
-    this API returns any secret values defined for the action.
+  IMPORTANT: When this API is called, AWS CodePipeline returns temporary credentials
+  for the Amazon S3 bucket used to store artifacts for the pipeline, if the action
+  requires access to that Amazon S3 bucket for input or output artifacts. Additionally,
+  this API returns any secret values defined for the action.
 
   ## Examples:
 
@@ -1171,15 +1171,14 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec get_third_party_job_details(job_id :: binary, client_token :: binary) ::
-          ExAws.Operation.JSON.t()
+  @spec get_third_party_job_details(job_id(), client_token()) :: ExAws.Operation.JSON.t()
   def get_third_party_job_details(job_id, client_token) do
     %{"jobId" => job_id, "clientToken" => client_token}
     |> request(:get_third_party_job_details)
   end
 
   @doc """
-    Gets a summary of all AWS CodePipeline action types associated with your account.
+  Gets a summary of all AWS CodePipeline action types associated with your account.
 
   ## Examples:
 
@@ -1209,7 +1208,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Gets a summary of the most recent executions for a pipeline.
+  Gets a summary of the most recent executions for a pipeline.
 
   ## Examples:
 
@@ -1240,7 +1239,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Gets a summary of all of the pipelines associated with your account.
+  Gets a summary of all of the pipelines associated with your account.
 
   ## Examples:
 
@@ -1270,9 +1269,9 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Gets a listing of all the webhooks in this region for this account.
-    The output lists all webhooks and includes the webhook URL and ARN,
-    as well the configuration for each webhook.
+  Gets a listing of all the webhooks in this region for this account.
+  The output lists all webhooks and includes the webhook URL and ARN,
+  as well the configuration for each webhook.
 
   ## Examples:
 
@@ -1302,10 +1301,10 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Returns information about any jobs for AWS CodePipeline to act upon.
-    poll_for_jobs is only valid for action types with "Custom" in the owner field.
-    If the action type contains "AWS" or "ThirdParty" in the owner field, the
-    poll_for_jobs action returns an error.
+  Returns information about any jobs for AWS CodePipeline to act upon.
+  poll_for_jobs is only valid for action types with "Custom" in the owner field.
+  If the action type contains "AWS" or "ThirdParty" in the owner field, the
+  poll_for_jobs action returns an error.
 
   ## Examples:
 
@@ -1345,14 +1344,14 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Determines whether there are any third party jobs for a job worker to act on.
-    Only used for partner actions.
+  Determines whether there are any third party jobs for a job worker to act on.
+  Only used for partner actions.
 
   ## Important
 
-    When this API is called, AWS CodePipeline returns temporary credentials for
-    the Amazon S3 bucket used to store artifacts for the pipeline, if the action
-    requires access to that Amazon S3 bucket for input or output artifacts.
+  When this API is called, AWS CodePipeline returns temporary credentials for
+  the Amazon S3 bucket used to store artifacts for the pipeline, if the action
+  requires access to that Amazon S3 bucket for input or output artifacts.
 
   ## Examples:
 
@@ -1395,7 +1394,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Provides information to AWS CodePipeline about new revisions to a source
+  Provides information to AWS CodePipeline about new revisions to a source
   """
   @spec put_action_revision(pipeline_name(), binary(), binary(), action_revision()) :: ExAws.Operation.JSON.t()
   def put_action_revision(pipeline_name, stage_name, action_name, action_revision) do
@@ -1417,7 +1416,7 @@ defmodule ExAws.CodePipeline do
   Provides the response to a manual approval request to AWS CodePipeline.
   Valid responses include Approved and Rejected.
   """
-  @spec put_approval_result(pipeline_name(), binary(), binary(), binary(), approval_result()) ::
+  @spec put_approval_result(pipeline_name(), binary(), stage_name(), binary(), approval_result()) ::
           ExAws.Operation.JSON.t()
   def put_approval_result(pipeline_name, stage_name, action_name, token, result) do
     %{
@@ -1431,8 +1430,8 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Represents the failure of a job as returned to the pipeline by a job worker.
-    Only used for custom actions.
+  Represents the failure of a job as returned to the pipeline by a job worker.
+  Only used for custom actions.
 
   ## Examples:
 
@@ -1458,7 +1457,7 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec put_job_failure_result(binary(), failure_details()) :: ExAws.Operation.JSON.t()
+  @spec put_job_failure_result(job_id(), failure_details()) :: ExAws.Operation.JSON.t()
   def put_job_failure_result(job_id, failure_details) do
     failure_details
     |> keyword_to_map()
@@ -1468,10 +1467,10 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Represents the success of a job as returned to the pipeline by a job worker.
-    Only used for custom actions.
+  Represents the success of a job as returned to the pipeline by a job worker.
+  Only used for custom actions.
   """
-  @spec put_job_success_result(binary(), put_job_success_result_opts()) :: ExAws.Operation.JSON.t()
+  @spec put_job_success_result(job_id(), put_job_success_result_opts()) :: ExAws.Operation.JSON.t()
   def put_job_success_result(job_id, opts \\ []) do
     opts
     |> keyword_to_map()
@@ -1481,10 +1480,10 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Represents the failure of a third party job as returned to the pipeline by a job worker.
-    Only used for partner actions.
+  Represents the failure of a third party job as returned to the pipeline by a job worker.
+  Only used for partner actions.
   """
-  @spec put_third_party_job_failure_result(binary(), binary(), failure_details()) :: ExAws.Operation.JSON.t()
+  @spec put_third_party_job_failure_result(job_id(), client_token(), failure_details()) :: ExAws.Operation.JSON.t()
   def put_third_party_job_failure_result(job_id, client_token, failure_details) do
     details =
       failure_details
@@ -1496,10 +1495,10 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Represents the success of a third party job as returned to the pipeline by a job worker.
-    Only used for partner actions.
+  Represents the success of a third party job as returned to the pipeline by a job worker.
+  Only used for partner actions.
   """
-  @spec put_third_party_job_success_result(binary(), binary(), put_third_party_job_success_result_opts()) ::
+  @spec put_third_party_job_success_result(job_id(), client_token(), put_third_party_job_success_result_opts()) ::
           ExAws.Operation.JSON.t()
   def put_third_party_job_success_result(job_id, client_token, opts \\ []) do
     opts
@@ -1510,16 +1509,16 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Defines a webhook and returns a unique webhook URL generated by
-    CodePipeline.
+  Defines a webhook and returns a unique webhook URL generated by
+  CodePipeline.
 
-    This URL can be supplied to third party source hosting
-    providers to call every time there's a code change. When CodePipeline
-    receives a POST request on this URL, the pipeline defined in the webhook is
-    started as long as the POST request satisfied the authentication and filtering
-    requirements supplied when defining the webhook. register_webhook_with_third_party
-    and deregister_webhook_with_third_party APIs can be used to automatically configure
-    supported third parties to call the generated webhook URL.
+  This URL can be supplied to third party source hosting
+  providers to call every time there's a code change. When CodePipeline
+  receives a POST request on this URL, the pipeline defined in the webhook is
+  started as long as the POST request satisfied the authentication and filtering
+  requirements supplied when defining the webhook. register_webhook_with_third_party
+  and deregister_webhook_with_third_party APIs can be used to automatically configure
+  supported third parties to call the generated webhook URL.
 
   ## Examples:
 
@@ -1552,8 +1551,8 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Configures a connection between the webhook that was created and
-    the external tool with events to be detected.
+  Configures a connection between the webhook that was created and
+  the external tool with events to be detected.
 
   ## Examples:
 
@@ -1581,8 +1580,8 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Resumes the pipeline execution by retrying the last failed
-    actions in a stage
+  Resumes the pipeline execution by retrying the last failed
+  actions in a stage
 
   ## Examples:
 
@@ -1620,11 +1619,10 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Starts the specified pipeline.
+  Starts the specified pipeline.
 
-    Specifically, it begins processing the latest commit to the
-    source location specified as part of the pipeline.
-
+  Specifically, it begins processing the latest commit to the
+  source location specified as part of the pipeline.
 
   ## Examples:
 
@@ -1673,12 +1671,12 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-    Provided as a by-pass for developers that want to pass in their
-    own JSON instead of relying on the individual functions to format
-    the JSON data.
+  Provided as a by-pass for developers that want to pass in their
+  own JSON instead of relying on the individual functions to format
+  the JSON data.
 
-    The action has to be an atom that aligns with one of the CodePipeline
-    API calls (see calls above for examples).
+  The action has to be an atom that aligns with one of the CodePipeline
+  API calls (see calls above for examples).
   """
   def direct_request(action, data) do
     request(data, action)
