@@ -855,14 +855,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.delete_pipeline("MyPipeline")
-        iex> op.data
-        %{"name" => "MyPipeline"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.delete_pipeline("MyPipeline")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"name" => "MyPipeline"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.DeletePipeline"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec delete_pipeline(pipeline_name()) :: ExAws.Operation.JSON.t()
   def delete_pipeline(name) do
@@ -1017,14 +1025,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.get_job_details("MyJob")
-        iex> op.data
-        %{"jobId" => "MyJob"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.get_job_details("MyJob")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"jobId" => "MyJob"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.GetJobDetails"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec get_job_details(binary()) :: ExAws.Operation.JSON.t()
   def get_job_details(job_id) do
@@ -1041,16 +1057,24 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.get_pipeline("MyPipeline", [version: 1])
-        iex> op.data
-        %{"name" => "MyPipeline", "version" => 1}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.get_pipeline("MyPipeline", [version: 1])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"name" => "MyPipeline", "version" => 1},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.GetPipeline"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
-  @spec get_pipeline(binary(), get_pipeline_options()) :: ExAws.Operation.JSON.t()
+  @spec get_pipeline(pipeline_name(), get_pipeline_options()) :: ExAws.Operation.JSON.t()
   def get_pipeline(name, opts \\ []) do
     opts
     |> keyword_to_map()
@@ -1066,14 +1090,25 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.get_pipeline_execution("MyPipeline", "executionId")
-        iex> op.data
-        %{"pipelineName" => "MyPipeline", "pipelineExecutionId" => "executionId"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.get_pipeline_execution("MyPipeline", "executionId")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "pipelineExecutionId" => "executionId",
+          "pipelineName" => "MyPipeline"
+        },
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.GetPipelineExecution"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec get_pipeline_execution(pipeline_name(), binary()) :: ExAws.Operation.JSON.t()
   def get_pipeline_execution(pipeline_name, pipeline_execution_id) do
@@ -1086,14 +1121,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.get_pipeline_state("MyPipeline")
-        iex> op.data
-        %{"name" => "MyPipeline"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.get_pipeline_state("MyPipeline")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"name" => "MyPipeline"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.GetPipelineState"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec get_pipeline_state(name :: binary) :: ExAws.Operation.JSON.t()
   def get_pipeline_state(name) do
@@ -1111,14 +1154,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.get_third_party_job_details("MyJob", "ClientToken")
-        iex> op.data
-        %{"clientToken" => "ClientToken", "jobId" => "MyJob"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.get_third_party_job_details("MyJob", "ClientToken")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"clientToken" => "ClientToken", "jobId" => "MyJob"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.GetThirdPartyJobDetails"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec get_third_party_job_details(job_id :: binary, client_token :: binary) ::
           ExAws.Operation.JSON.t()
@@ -1132,14 +1183,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.list_action_types([action_owner_filter: "MyFilter", next_token: "ClientToken"])
-        iex> op.data
-        %{"actionOwnerFilter" => "MyFilter", "nextToken" => "ClientToken"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.list_action_types([action_owner_filter: "MyFilter", next_token: "ClientToken"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"actionOwnerFilter" => "MyFilter", "nextToken" => "ClientToken"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.ListActionTypes"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec list_action_types(list_action_types_options()) :: ExAws.Operation.JSON.t()
   def list_action_types(opts \\ []) do
@@ -1464,14 +1523,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.put_webhook("MyWebHook")
-        iex> op.data
-        %{"webhook" => "MyWebHook"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.put_webhook("MyWebHook")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"webhook" => "MyWebHook"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.PutWebhook"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec put_webhook(webhook_definition()) :: ExAws.Operation.JSON.t()
   def put_webhook(webhook) do
@@ -1490,14 +1557,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.register_webhook_with_third_party("MyWebHook")
-        iex> op.data
-        %{"webhookName" => "MyWebHook"}
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.register_webhook_with_third_party("MyWebHook")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"webhookName" => "MyWebHook"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.RegisterWebhookWithThirdParty"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec register_webhook_with_third_party(webhook_name()) :: ExAws.Operation.JSON.t()
   def register_webhook_with_third_party(webhook_name) do
@@ -1511,19 +1586,27 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.retry_stage_execution("MyPipeline", "MyStage", "ExecutionId")
-        iex> op.data
-        %{
+      iex> ExAws.CodePipeline.retry_stage_execution("MyPipeline", "MyStage", "ExecutionId")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
           "pipelineExecutionId" => "ExecutionId",
           "pipelineName" => "MyPipeline",
           "retryMode" => "FAILED_ACTIONS",
           "stageName" => "MyStage"
-        }
-        iex> op.headers
-        [
+        },
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.RetryStageExecution"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec retry_stage_execution(pipeline_name(), binary(), binary(), binary()) :: ExAws.Operation.JSON.t()
   def retry_stage_execution(pipeline_name, stage_name, pipeline_execution_id, retry_mode \\ "FAILED_ACTIONS") do
@@ -1545,17 +1628,22 @@ defmodule ExAws.CodePipeline do
 
   ## Examples:
 
-        iex> op = ExAws.CodePipeline.start_pipeline_execution("MyPipeline", [client_request_token: "Test"])
-        iex> op.data
-        %{
-          "clientRequestToken" => "Test",
-          "name" => "MyPipeline"
-        }
-        iex> op.headers
-        [
+      iex> ExAws.CodePipeline.start_pipeline_execution("MyPipeline", [client_request_token: "Test"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"clientRequestToken" => "Test", "name" => "MyPipeline"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodePipeline_20150709.StartPipelineExecution"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec start_pipeline_execution(binary(), start_pipeline_execution_opts()) :: ExAws.Operation.JSON.t()
   def start_pipeline_execution(name, opts \\ []) do
