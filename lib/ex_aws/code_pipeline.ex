@@ -73,6 +73,14 @@ defmodule ExAws.CodePipeline do
   @type role_arn() :: binary()
 
   @typedoc """
+  Used for paging. The next_token is returned by one function
+  call and must be passed into the next call to page.
+
+  - Length Constraints: Minimum length of 1. Maximum length of 2048.
+  """
+  @type next_token() :: binary()
+
+  @typedoc """
   The name of the pipeline
 
   - Length Constraints: Minimum length of 1. Maximum length of 100.
@@ -89,12 +97,33 @@ defmodule ExAws.CodePipeline do
   @type webhook_name() :: binary()
 
   @typedoc """
+  The id of a pipeline execution
+
+  - Pattern: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+  """
+  @type pipeline_execution_id() :: binary()
+
+  @typedoc """
   The name of the stage
 
   - Length Constraints: Minimum length of 1. Maximum length of 100.
   - Pattern: [A-Za-z0-9.@\-_]+
   """
   @type stage_name() :: binary()
+
+  @typedoc """
+  Timestamps are formatted according to the ISO 8601 standard. These are often referred to as
+  "DateTime" or "Date" parameters.
+
+  Acceptable formats include:
+
+  - YYYY-MM-DDThh:mm:ss.sssTZD (UTC), for example, 2014-10-01T20:30:00.000Z
+  - YYYY-MM-DDThh:mm:ss.sssTZD (with offset), for example, 2014-10-01T12:30:00.000-08:00
+  - YYYY-MM-DD, for example, 2014-10-01
+  - Unix time in seconds, for example, 1412195400. This is sometimes referred to as Unix Epoch time
+    and represents the number of seconds since midnight, January 1, 1970 UTC.
+  """
+  @type timestamp() :: binary() | integer()
 
   @typedoc """
   Specifies whether artifacts are prevented from transitioning into the stage and being processed by
@@ -163,38 +192,174 @@ defmodule ExAws.CodePipeline do
   @type version() :: binary()
 
   @typedoc """
-    Used generically to define a paging next_token
+  The maximum number of pipelines to return in a single call. To retrieve the remaining pipelines,
+  make another call with the returned nextToken value. The minimum value you can specify is 1. The
+  maximum accepted value is 1000.
+
+  - Valid Range: Minimum value of 1. Maximum value of 1000.
+  """
+  @type max_results() :: integer()
+
+  @typedoc """
+  Optional input to `list_pipelines/1`
+  """
+  @type list_pipelines_options() ::
+          [{:next_token, next_token()}, {:max_results, max_results()}]
+          | %{optional(:next_token) => next_token(), optional(:max_results) => max_results()}
+
+  @typedoc """
+  Used generically to define a paging next_token
   """
   @type paging_options :: [
-          next_token: binary
+          next_token: binary()
         ]
 
-  @type list_pipeline_executions_options :: [
-          max_results: binary,
-          next_token: binary,
-          pipeline_name: pipeline_name()
-        ]
+  @typedoc """
+  Filter for pipeline executions that have successfully completed the stage in the current pipeline
+  version
 
-  @type get_pipeline_options :: [
-          version: integer
-        ]
+  - Length Constraints: Minimum length of 1. Maximum length of 100.
+  - Pattern: [A-Za-z0-9.@\-_]+
+  """
+  @type succeeded_in_stage_filter() :: %{optional(:stage_name) => stage_name()} | [stage_name: stage_name()]
 
-  @type approval_result :: %{status: binary, summary: binary}
+  @typedoc """
+  The pipeline execution to filter on
 
-  @type failure_details :: [
-          external_execution_id: binary,
-          message: binary,
-          type: binary
-        ]
+  - succeeded_in_stage - Filter for pipeline executions where the stage was successful in the
+    current pipeline version. See `t:succeeded_in_stage_filter/0`.
+  """
+  @type pipeline_execution_filter() ::
+          %{
+            optional(:succeeded_in_stage) => succeeded_in_stage_filter()
+          }
+          | [succeeded_in_stage: succeeded_in_stage_filter()]
+
+  @typedoc """
+  Input to the `list_pipeline_executions/2` function
+
+  - filter - The pipeline execution to filter on. See `t:pipeline_execution_filter/0`.
+  - next_token - The token that was returned from the previous `list_pipeline_executions/2` call, which
+    can be used to return the next set of pipeline executions in the list.
+  - max_results - The maximum number of results to return in a single call. To retrieve the
+    remaining results, make another call with the returned next_token value. Pipeline history is
+    limited to the most recent 12 months, based on pipeline execution start times. Default value is
+    100.
+  """
+  @type list_pipeline_executions_options ::
+          [
+            {:max_results, max_results()},
+            {:next_token, next_token()},
+            {:filter, pipeline_execution_filter()}
+          ]
+          | %{
+              required(:pipeline_name) => pipeline_name(),
+              optional(:next_token) => next_token(),
+              optional(:max_results) => max_results()
+            }
+
+  @typedoc """
+  The version number of the pipeline. If you do not specify a version, defaults to the current
+  version
+
+  - Valid Range: Minimum value of 1.
+  """
+  @type get_pipeline_options :: [version: integer] | %{optional(:version) => integer()}
+
+  @typedoc """
+  The response submitted by a reviewer assigned to an approval action request
+
+  Valid Values
+  ```
+  ["Approved" | "Rejected"]
+  ```
+  """
+  @type approval_result_status() :: binary()
+
+  @typedoc """
+  The summary of the current status of the approval request
+
+  - Length Constraints: Minimum length of 0. Maximum length of 512.
+  """
+  @type approval_result_summary() :: binary()
+
+  @typedoc """
+  Represents information about the result of an approval request
+  """
+  @type approval_result() ::
+          %{required(:status) => approval_result_status(), required(:summary) => approval_result_summary()}
+          | [{:status, approval_result_status()}, {:summary, approval_result_summary()}]
+
+  @typedoc """
+  The external ID of the run of the action that failed
+
+  - Length Constraints: Minimum length of 1. Maximum length of 1500.
+  """
+  @type execution_id() :: binary()
+
+  @typedoc """
+  The message about the failure
+
+  - Length Constraints: Minimum length of 1. Maximum length of 5000.
+  """
+  @type message() :: binary()
+
+  @typedoc """
+  The type of the failure
+
+  Valid Values
+  ```
+  ["JobFailed", "ConfigurationError", "PermissionError", "RevisionOutOfSync",
+  "RevisionUnavailable", "SystemUnavailable"]
+  ```
+  """
+  @type failure_type() :: binary()
+
+  @typedoc """
+  The details about the failure of a job
+  """
+  @type failure_details() ::
+          [
+            {:external_execution_id, execution_id()},
+            {:message, message()},
+            {:type, failure_type()}
+          ]
+          | %{
+              optional(:external_execution_id) => execution_id(),
+              required(:message) => message(),
+              required(:type) => failure_type()
+            }
+
+  @typedoc """
+  The description of the action configuration property that is displayed to users.
+
+  - Length Constraints: Minimum length of 1. Maximum length of 160.
+  """
+  @type description() :: binary()
+
+  @typedoc """
+  The name of the action configuration property
+
+  - Length Constraints: Minimum length of 1. Maximum length of 50.
+  """
+  @type action_configuration_key() :: binary()
+
+  @typedoc """
+  The type of the configuration property
+
+  Valid Values
+  ```
+  ["String", "Number", "Boolean"]
+  ```
+  """
+  @type action_configuration_property_type() :: binary()
 
   @typedoc """
   Represents information about an action configuration property
 
   - description - The description of the action configuration property that is displayed to users.
-    - Length Constraints: Minimum length of 1. Maximum length of 160.
   - key - Whether the configuration property is a key
   - name - The name of the action configuration property.
-    - Length Constraints: Minimum length of 1. Maximum length of 50.
   - queryable - Indicates that the property is used with `poll_for_jobs/2`.
     - When creating a custom action, an action can have up to one queryable property. If it has one,
     that property must be both required and not secret.
@@ -211,15 +376,25 @@ defmodule ExAws.CodePipeline do
     ["String", "Number", "Boolean"]
     ```
   """
-  @type action_configuration_property :: [
-          description: binary(),
-          key: boolean(),
-          name: binary(),
-          queryable: boolean(),
-          required: boolean(),
-          secret: boolean(),
-          type: binary()
-        ]
+  @type action_configuration_property ::
+          [
+            {:description, description()},
+            {:key, boolean()},
+            {:name, action_configuration_key()},
+            {:queryable, boolean()},
+            {:required, boolean()},
+            {:secret, boolean()},
+            {:type, action_configuration_property_type()}
+          ]
+          | %{
+              optional(:description) => description(),
+              required(:key) => boolean(),
+              required(:name) => action_configuration_key(),
+              optional(:queryable) => boolean(),
+              required(:required) => boolean(),
+              required(:secret) => boolean(),
+              optional(:type) => action_configuration_property_type()
+            }
 
   @typedoc """
   URL used in `t:action_type_setting/0`
@@ -245,10 +420,10 @@ defmodule ExAws.CodePipeline do
   """
   @type action_type_setting ::
           [
-            entity_url_template: url_template(),
-            execution_url_template: url_template(),
-            revision_url_template: url_template(),
-            third_party_configuration_url: url_template()
+            {:entity_url_template, url_template()},
+            {:execution_url_template, url_template()},
+            {:revision_url_template, url_template()},
+            {:third_party_configuration_url, url_template()}
           ]
           | %{
               optional(:entity_url_template) => url_template(),
@@ -280,12 +455,54 @@ defmodule ExAws.CodePipeline do
           type: binary
         ]
 
-  @type action_type_id :: %{
-          category: binary,
-          owner: binary,
-          provider: binary,
-          version: binary
-        }
+  @typedoc """
+  A category defines what kind of action can be taken in the stage, and constrains the provider type
+  for the action.
+
+  Valid Values
+  ```
+  ["Source", "Build", "Deploy", "Test", "Invoke", "Approval"]
+  ```
+  """
+  @type action_category() :: binary()
+
+  @typedoc """
+  The creator of the action being called
+
+  Valid Values
+  ```
+  ["AWS", "ThirdParty", "Custom"]
+  ```
+  """
+  @type action_owner() :: binary()
+
+  @typedoc """
+  The provider of the service being called by the action. Valid providers are determined by the
+  action category. For example, an action in the Deploy category type might have a provider of
+  CodeDeploy, which would be specified as CodeDeploy.
+
+  - Length Constraints: Minimum length of 1. Maximum length of 35.
+  - Pattern: [0-9A-Za-z_-]+
+  """
+  @type action_provider() :: binary()
+
+  @typedoc """
+  Represents information about an action type. See [Valid Action Types and Providers in
+  CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html#actions-valid-providers).
+  """
+  @type action_type_id() ::
+          %{
+            category: action_category(),
+            owner: action_owner(),
+            provider: action_provider(),
+            version: version()
+          }
+          | [
+              {:category, action_category()},
+              {:owner, action_owner()},
+              {:provider, action_provider()},
+              {:version, version()}
+            ]
 
   @type input_artifact :: %{
           name: binary
@@ -354,10 +571,12 @@ defmodule ExAws.CodePipeline do
           query_param: map
         ]
 
-  @type list_webhooks_options :: [
-          max_results: binary,
-          next_token: binary
-        ]
+  @typedoc """
+  Optional input to `list_webhooks/1`
+  """
+  @type list_webhooks_options ::
+          [{:max_results, max_results()}, {:next_token, next_token()}]
+          | %{optional(:max_results) => max_results(), optional(:next_token) => next_token()}
 
   @type poll_for_third_party_jobs_opts() :: [
           max_batch_size: integer
@@ -379,16 +598,61 @@ defmodule ExAws.CodePipeline do
           current_revision: current_revision
         ]
 
+  @typedoc """
+  Filters the list of action types to those created by a specified entity.
+
+  Valid Values
+  ```
+  ["AWS", "ThirdParty", "Custom"]
+  ```
+  """
+  @type action_owner_filter() :: binary()
+
+  @typedoc """
+  Region to filter on for the list of action types
+
+  - Length Constraints: Minimum length of 4. Maximum length of 30.
+  """
+  @type region_filter() :: binary()
+
+  @typedoc """
+  Used to get a summary of all CodePipeline action types associated with your account.
+  """
   @type list_action_types_options :: [
-          action_owner_filter: binary,
-          next_token: binary
+          action_owner_filter: action_owner_filter(),
+          next_token: binary(),
+          region_filter: region_filter()
         ]
 
-  @type action_revision :: [
-          created: integer,
-          revision_change_id: binary,
-          revision_id: binary
-        ]
+  @typedoc """
+  The unique identifier of the change that set the state to this revision (for example, a deployment
+  ID or timestamp).
+
+  - Length Constraints: Minimum length of 1. Maximum length of 100.
+  """
+  @type revision_change_id() :: binary()
+
+  @typedoc """
+  The system-generated unique ID that identifies the revision number of the action
+
+  - Length Constraints: Minimum length of 1. Maximum length of 1500.
+  """
+  @type revision_id() :: binary()
+
+  @typedoc """
+  Represents information about the version (or revision) of an action
+  """
+  @type action_revision() ::
+          [
+            {:created, timestamp()},
+            {:revision_change_id, revision_change_id()},
+            {:revision_id, revision_id()}
+          ]
+          | %{
+              required(:created) => timestamp(),
+              required(:revision_change_id) => revision_change_id(),
+              required(:revision_id) => revision_id()
+            }
 
   @type put_third_party_job_success_result_opts :: [
           continuation_token: binary,
@@ -1110,7 +1374,7 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec get_pipeline_execution(pipeline_name(), binary()) :: ExAws.Operation.JSON.t()
+  @spec get_pipeline_execution(pipeline_name(), pipeline_execution_id()) :: ExAws.Operation.JSON.t()
   def get_pipeline_execution(pipeline_name, pipeline_execution_id) do
     %{"pipelineExecutionId" => pipeline_execution_id, "pipelineName" => pipeline_name}
     |> request(:get_pipeline_execution)
@@ -1138,7 +1402,7 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec get_pipeline_state(name :: binary) :: ExAws.Operation.JSON.t()
+  @spec get_pipeline_state(pipeline_name()) :: ExAws.Operation.JSON.t()
   def get_pipeline_state(name) do
     %{"name" => name}
     |> request(:get_pipeline_state)
@@ -1230,8 +1494,8 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec list_pipeline_executions(pipeline_name(), list_pipeline_executions_options()) :: ExAws.Operation.JSON.t()
-  def list_pipeline_executions(pipeline_name, opts \\ []) do
-    opts
+  def list_pipeline_executions(pipeline_name, list_pipeline_executions_options \\ []) do
+    list_pipeline_executions_options
     |> keyword_to_map()
     |> Map.merge(%{pipeline_name: pipeline_name})
     |> Utils.camelize_map()
@@ -1260,9 +1524,9 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec list_pipelines(paging_options()) :: ExAws.Operation.JSON.t()
-  def list_pipelines(opts \\ []) do
-    opts
+  @spec list_pipelines(list_pipelines_options()) :: ExAws.Operation.JSON.t()
+  def list_pipelines(list_pipelines_options \\ []) do
+    list_pipelines_options
     |> keyword_to_map()
     |> Utils.camelize_map()
     |> request(:list_pipelines)
@@ -1272,6 +1536,8 @@ defmodule ExAws.CodePipeline do
   Gets a listing of all the webhooks in this region for this account.
   The output lists all webhooks and includes the webhook URL and ARN,
   as well the configuration for each webhook.
+
+  Note: If a secret token was provided, it will be redacted in the response.
 
   ## Examples:
 
@@ -1293,8 +1559,8 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec list_webhooks(list_webhooks_options()) :: ExAws.Operation.JSON.t()
-  def list_webhooks(opts \\ []) do
-    opts
+  def list_webhooks(list_webhooks_options \\ []) do
+    list_webhooks_options
     |> keyword_to_map()
     |> Utils.camelize_map()
     |> request(:list_webhooks)
@@ -1396,12 +1662,9 @@ defmodule ExAws.CodePipeline do
   @doc """
   Provides information to AWS CodePipeline about new revisions to a source
   """
-  @spec put_action_revision(pipeline_name(), binary(), binary(), action_revision()) :: ExAws.Operation.JSON.t()
+  @spec put_action_revision(pipeline_name(), stage_name(), binary(), action_revision()) :: ExAws.Operation.JSON.t()
   def put_action_revision(pipeline_name, stage_name, action_name, action_revision) do
-    revision_details =
-      action_revision
-      |> Utils.keyword_to_map()
-      |> Utils.camelize_map()
+    revision_details = action_revision |> keyword_to_map() |> Utils.camelize_map()
 
     %{
       "actionName" => action_name,
