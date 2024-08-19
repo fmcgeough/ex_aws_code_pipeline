@@ -5,16 +5,19 @@ defmodule ExAws.CodePipeline do
   The documentation and types provided lean heavily on the [AWS documentation for
   CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Operations.html).
   The AWS documentation is the definitive source of information and should be consulted to
-  understand how to use CodePipeline and its API functions.
+  understand how to use CodePipeline and its API functions. The documentation on types and
+  functions in the library may be helpful but it should not be considered definitive. The
+  library documentation does try to provide valid values, length restrictions, and any pattern
+  matching that is defined as acceptable by the AWS API.
 
   Generally the functions take required parameters separately from any optional arguments. The
   optional arguments are passed as a Map (with a defined type).
 
-  The defined types for the Maps used to pass optional arguments use the standard Elixir snake-case
-  for keys. The API itself uses camel-case Strings for keys. The library provides the conversion.
-  Most of the API keys use a lower-case letter for the first word and upper-case for the subsequent
-  words. If there are exceptions to this rule they are handled by the library so an Elixir
-  developer can just use standard snake-case for all the keys.
+  The defined types used to pass optional arguments use the standard Elixir snake-case for keys. The
+  API itself uses camel-case Strings for keys. The library provides the conversion. Most of the API
+  keys use a lower-case letter for the first word and upper-case for the subsequent words. If there
+  are exceptions to this rule they are handled by the library so an Elixir developer can just use
+  standard snake-case for all the keys.
 
   ## Description
 
@@ -31,8 +34,8 @@ defmodule ExAws.CodePipeline do
   """
 
   # version of the AWS API
-
   @version "20150709"
+
   @namespace "CodePipeline"
   @valid_categories ["Source", "Build", "Deploy", "Test", "Invoke", "Approval"]
 
@@ -42,7 +45,7 @@ defmodule ExAws.CodePipeline do
   @typedoc """
   The unique system-generated ID of the job for which you want to confirm receipt.
 
-  Pattern: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+  - Pattern: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
   """
   @type job_id() :: binary()
 
@@ -811,32 +814,32 @@ defmodule ExAws.CodePipeline do
   CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html#actions-valid-providers).
   """
   @type action_type_id() ::
-          %{
-            required(:category) => action_category(),
-            required(:owner) => action_owner(),
-            required(:provider) => action_provider(),
-            required(:version) => version()
-          }
-          | [
-              {:category, action_category()},
-              {:owner, action_owner()},
-              {:provider, action_provider()},
-              {:version, version()}
-            ]
+          [
+            {:category, action_category()},
+            {:owner, action_owner()},
+            {:provider, action_provider()},
+            {:version, version()}
+          ]
+          | %{
+              required(:category) => action_category(),
+              required(:owner) => action_owner(),
+              required(:provider) => action_provider(),
+              required(:version) => version()
+            }
 
   @typedoc """
   Represents information about the input of an action
 
   - name - The name of the output of an artifact, such as "My App".
   """
-  @type input_artifact :: %{name: artifact_name()} | [{:name, artifact_name()}]
+  @type input_artifact :: [{:name, artifact_name()}] | %{name: artifact_name()}
 
   @typedoc """
   Represents information about the output of an action
 
   - name - The name of the output of an artifact, such as "My App".
   """
-  @type output_artifact() :: %{name: artifact_name()} | [{:name, artifact_name()}]
+  @type output_artifact() :: [{:name, artifact_name()}] | %{name: artifact_name()}
 
   @typedoc """
   Reserved for future use
@@ -907,8 +910,8 @@ defmodule ExAws.CodePipeline do
   """
   @type create_custom_action_type_optional() ::
           [
-            configuration_properties: [action_configuration_property()],
-            settings: action_type_setting()
+            {:configuration_properties, [action_configuration_property()]},
+            {:settings, action_type_setting()}
           ]
           | %{
               optional(:configuration_properties) => [action_configuration_property()],
@@ -919,22 +922,22 @@ defmodule ExAws.CodePipeline do
   Represents the structure of actions and stages to be performed in the pipeline.
   """
   @type pipeline_declaration() ::
-          %{
-            required(:name) => pipeline_name(),
-            required(:role_arn) => role_arn(),
-            required(:stages) => [stage_declaration()],
-            optional(:artifact_store) => artifact_store(),
-            optional(:artifact_stores) => [artifact_store()],
-            optional(:version) => integer
-          }
-          | [
-              {:name, pipeline_name()},
-              {:role_arn, role_arn()},
-              {:stages, [stage_declaration()]},
-              {:artifact_store, artifact_store()},
-              {:artifact_stores, [artifact_store()]},
-              {:version, integer()}
-            ]
+          [
+            {:name, pipeline_name()},
+            {:role_arn, role_arn()},
+            {:stages, [stage_declaration()]},
+            {:artifact_store, artifact_store()},
+            {:artifact_stores, [artifact_store()]},
+            {:version, integer()}
+          ]
+          | %{
+              required(:name) => pipeline_name(),
+              required(:role_arn) => role_arn(),
+              required(:stages) => [stage_declaration()],
+              optional(:artifact_store) => artifact_store(),
+              optional(:artifact_stores) => [artifact_store()],
+              optional(:version) => integer
+            }
 
   @typedoc """
   Optional input for function `poll_for_jobs/3`
