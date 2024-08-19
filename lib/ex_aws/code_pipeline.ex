@@ -1958,8 +1958,8 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec get_pipeline(pipeline_name(), get_pipeline_options()) :: ExAws.Operation.JSON.t()
-  def get_pipeline(name, opts \\ []) do
-    opts
+  def get_pipeline(name, get_pipeline_options \\ []) do
+    get_pipeline_options
     |> keyword_to_map()
     |> Map.merge(%{name: name})
     |> Utils.camelize_map()
@@ -2086,8 +2086,8 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec list_action_types(list_action_types_options()) :: ExAws.Operation.JSON.t()
-  def list_action_types(opts \\ []) do
-    opts
+  def list_action_types(list_action_types_options \\ []) do
+    list_action_types_options
     |> keyword_to_map()
     |> Utils.camelize_map()
     |> request(:list_action_types)
@@ -2421,8 +2421,8 @@ defmodule ExAws.CodePipeline do
   Only used for custom actions.
   """
   @spec put_job_success_result(job_id(), put_job_success_result_optional()) :: ExAws.Operation.JSON.t()
-  def put_job_success_result(job_id, opts \\ []) do
-    opts
+  def put_job_success_result(job_id, put_job_success_result_optional \\ []) do
+    put_job_success_result_optional
     |> keyword_to_map()
     |> Map.merge(%{job_id: job_id})
     |> Utils.camelize_map()
@@ -2450,8 +2450,8 @@ defmodule ExAws.CodePipeline do
   """
   @spec put_third_party_job_success_result(job_id(), client_token(), put_third_party_job_success_result_optional()) ::
           ExAws.Operation.JSON.t()
-  def put_third_party_job_success_result(job_id, client_token, opts \\ []) do
-    opts
+  def put_third_party_job_success_result(job_id, client_token, put_third_party_job_success_result \\ []) do
+    put_third_party_job_success_result
     |> keyword_to_map()
     |> Map.merge(%{job_id: job_id, client_token: client_token})
     |> Utils.camelize_map()
@@ -2594,8 +2594,8 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec start_pipeline_execution(binary(), start_pipeline_execution_optional()) :: ExAws.Operation.JSON.t()
-  def start_pipeline_execution(name, opts \\ []) do
-    opts
+  def start_pipeline_execution(name, start_pipeline_execution_optional \\ []) do
+    start_pipeline_execution_optional
     |> keyword_to_map()
     |> Map.merge(%{name: name})
     |> Utils.camelize_map()
