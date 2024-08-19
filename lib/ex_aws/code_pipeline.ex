@@ -257,6 +257,13 @@ defmodule ExAws.CodePipeline do
   @type action_name() :: binary()
 
   @typedoc """
+  AWS Region, such as "us-east-1"
+
+  - Length Constraints: Minimum length of 4. Maximum length of 30.
+  """
+  @type aws_region_name() :: binary()
+
+  @typedoc """
   A category defines what kind of action can be taken in the stage, and constrains the provider type
   for the action.
 
@@ -557,9 +564,59 @@ defmodule ExAws.CodePipeline do
   @type target_action() :: binary()
 
   @typedoc """
+  The action's configuration.
+
+  These are key-value pairs that specify input values for an action. For more information, see
+  Action Structure Requirements in CodePipeline. For the list of configuration properties for the
+  AWS CloudFormation action type in CodePipeline, see Configuration Properties Reference in the AWS
+  CloudFormation User Guide. For template snippets with examples, see Using Parameter Override
+  Functions with CodePipeline Pipelines in the AWS CloudFormation User Guide.
+
+  - Key Length Constraints: Minimum length of 1. Maximum length of 50.
+  - Value Length Constraints: Minimum length of 1. Maximum length of 1000.
+  """
+  @type action_configuration_map() :: map()
+
+  @typedoc """
+  The variable namespace associated with the action
+
+  All variables produced as output by this action fall under this namespace.
+
+  - Length Constraints: Minimum length of 1. Maximum length of 100.
+  - Pattern: [A-Za-z0-9@\-_]+
+  """
+  @type action_namespace() :: binary()
+
+  @typedoc """
+  A timeout duration in minutes that can be applied against the ActionType’s default timeout value
+  specified in Quotas for AWS CodePipeline.
+
+  This attribute is available only to the manual approval ActionType.
+
+  - Valid Range: Minimum value of 5. Maximum value of 86400.
+  """
+  @type action_timeout() :: pos_integer()
+
+  @typedoc """
+  A map of property names and values. For an action type with no queryable properties, this value
+  must be null or an empty map
+
+  For an action type with a queryable property, you must supply that property as a key in the map.
+  Only jobs whose action configuration matches the mapped value are returned.
+
+  - Map Entries: Minimum number of 0 items. Maximum number of 1 item.
+  - Key Length Constraints: Minimum length of 1. Maximum length of 50.
+  - Value Length Constraints: Minimum length of 1. Maximum length of 50.
+  - Value Pattern: [a-zA-Z0-9_-]+
+  """
+  @type query_param() :: map()
+
+  @typedoc """
   A tag is a key-value pair that is used to manage the resource.
   """
-  @type tag() :: [key: tag_key(), value: tag_value()] | %{required(:key) => tag_key(), required(:value) => tag_value()}
+  @type tag() ::
+          [{:key, tag_key()}, {:value, tag_value()}]
+          | %{required(:key) => tag_key(), required(:value) => tag_value()}
 
   @typedoc """
   Optional input to `list_pipelines/1`
@@ -569,20 +626,13 @@ defmodule ExAws.CodePipeline do
           | %{optional(:next_token) => next_token(), optional(:max_results) => max_results()}
 
   @typedoc """
-  Used generically to define a paging next_token
-  """
-  @type paging_options :: [
-          next_token: binary()
-        ]
-
-  @typedoc """
   Filter for pipeline executions that have successfully completed the stage in the current pipeline
   version
 
   - Length Constraints: Minimum length of 1. Maximum length of 100.
   - Pattern: [A-Za-z0-9.@\-_]+
   """
-  @type succeeded_in_stage_filter() :: %{optional(:stage_name) => stage_name()} | [stage_name: stage_name()]
+  @type succeeded_in_stage_filter() :: %{optional(:stage_name) => stage_name()} | [{:stage_name, stage_name()}]
 
   @typedoc """
   The pipeline execution to filter on
@@ -591,10 +641,8 @@ defmodule ExAws.CodePipeline do
     current pipeline version. See `t:succeeded_in_stage_filter/0`.
   """
   @type pipeline_execution_filter() ::
-          %{
-            optional(:succeeded_in_stage) => succeeded_in_stage_filter()
-          }
-          | [succeeded_in_stage: succeeded_in_stage_filter()]
+          [{:succeeded_in_stage, succeeded_in_stage_filter()}]
+          | %{optional(:succeeded_in_stage) => succeeded_in_stage_filter()}
 
   @typedoc """
   Input to the `list_pipeline_executions/2` function
@@ -625,7 +673,7 @@ defmodule ExAws.CodePipeline do
 
   - Valid Range: Minimum value of 1.
   """
-  @type get_pipeline_options :: [version: integer] | %{optional(:version) => integer()}
+  @type get_pipeline_options :: [{:version, integer}] | %{optional(:version) => integer()}
 
   @typedoc """
   Represents information about the result of an approval request
@@ -803,24 +851,53 @@ defmodule ExAws.CodePipeline do
   @typedoc """
   Represents information about an action declaration
 
+  - action_type_id - Specifies the action type and the provider of the action.
+  - name - The action declaration's name
+  - configuration - The action's configuration
+  - input_artifacts - The name or ID of the artifact consumed by the action, such as a test or build
+    artifact
+  - namespace - The variable namespace associated with the action
+  - output_artifacts - The name or ID of the result of the action declaration, such as a test or
+    build artifact
+  - region - The action declaration's AWS Region, such as us-east-1
+  - role_arn - The ARN of the IAM service role that performs the declared action
+  - run_order - The order in which actions are run
+  - timeout_in_minutes - A timeout duration in minutes that can be applied against the ActionType’s
+  default timeout value specified in Quotas for AWS CodePipeline
   """
-  @type action_declaration :: [
-          {:action_type_id, action_type_id()},
-          {:configuration, map()},
-          {:input_artifacts, [input_artifact()]},
-          {:name, action_name()},
-          {:output_artifacts, [output_artifact()]},
-          {:region, binary()},
-          {:role_arn, role_arn()},
-          {:run_order, integer()},
-          {:blockers, [blocker_declaration()]}
-        ]
+  @type action_declaration() ::
+          [
+            {:action_type_id, action_type_id()},
+            {:name, action_name()},
+            {:configuration, action_configuration_map()},
+            {:input_artifacts, [input_artifact()]},
+            {:namespace, action_namespace()},
+            {:output_artifacts, [output_artifact()]},
+            {:region, aws_region_name()},
+            {:role_arn, role_arn()},
+            {:run_order, pos_integer()},
+            {:timeout_in_minutes, action_timeout()}
+          ]
+          | %{
+              required(:action_type_id) => action_type_id(),
+              required(:name) => action_name(),
+              optional(:configuration) => action_configuration_map(),
+              optional(:input_artifacts) => [input_artifact()],
+              optional(:namespace) => action_namespace(),
+              optional(:output_artifacts) => [output_artifact()],
+              optional(:region) => binary(),
+              optional(:role_arn) => role_arn(),
+              optional(:run_order) => pos_integer(),
+              optional(:timeout_in_minutes) => action_timeout()
+            }
 
   @typedoc """
   Represents information about a stage and its definition
 
   """
-  @type stage_declaration() :: [actions: [action_declaration()]] | %{required(:actions) => [action_declaration()]}
+  @type stage_declaration() ::
+          [{:actions, [action_declaration()]}, {:blockers, [blocker_declaration()]}]
+          | %{required(:actions) => [action_declaration()], optional(:blockers) => [blocker_declaration()]}
 
   @typedoc """
   Optional input to the `create_custom_action_type/5` function
@@ -841,7 +918,7 @@ defmodule ExAws.CodePipeline do
   @typedoc """
   Represents the structure of actions and stages to be performed in the pipeline.
   """
-  @type pipeline_declaration ::
+  @type pipeline_declaration() ::
           %{
             required(:name) => pipeline_name(),
             required(:role_arn) => role_arn(),
@@ -858,20 +935,6 @@ defmodule ExAws.CodePipeline do
               {:artifact_stores, [artifact_store()]},
               {:version, integer()}
             ]
-
-  @typedoc """
-  A map of property names and values. For an action type with no queryable properties, this value
-  must be null or an empty map
-
-  For an action type with a queryable property, you must supply that property as a key in the map.
-  Only jobs whose action configuration matches the mapped value are returned.
-
-  - Map Entries: Minimum number of 0 items. Maximum number of 1 item.
-  - Key Length Constraints: Minimum length of 1. Maximum length of 50.
-  - Value Length Constraints: Minimum length of 1. Maximum length of 50.
-  - Value Pattern: [a-zA-Z0-9_-]+
-  """
-  @type query_param() :: map()
 
   @typedoc """
   Optional input for function `poll_for_jobs/3`
@@ -1046,7 +1109,9 @@ defmodule ExAws.CodePipeline do
   @typedoc """
   The event criteria that specify when a webhook notification is sent to your URL
 
-  - json_path - A JsonPath expression that is applied to the body/payload of the webhook
+  - json_path - A JSONPath expression (JSONPath is a query language for JSON, similar to XPath for
+    XML. It allows you to select and extract data from a JSON document) that is applied to the
+    body/payload of the webhook
   - match_equals - The value selected by the JsonPath expression must match what is supplied in the
     MatchEquals field.
   """
