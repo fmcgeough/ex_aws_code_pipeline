@@ -676,9 +676,9 @@ defmodule ExAws.CodePipeline do
             {:filter, pipeline_execution_filter()}
           ]
           | %{
-              required(:pipeline_name) => pipeline_name(),
               optional(:next_token) => next_token(),
-              optional(:max_results) => max_results()
+              optional(:max_results) => max_results(),
+              optional(:filter) => pipeline_execution_filter()
             }
 
   @typedoc """
@@ -1296,9 +1296,11 @@ defmodule ExAws.CodePipeline do
   Returns information about a specified job and whether that job has been received by the job
   worker. Only used for custom actions.
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.acknowledge_job("f4f4ff82-2d11-EXAMPLE", "3")
+      iex> job_id = "f4f4ff82-2d11-EXAMPLE"
+      iex> nonce = "3"
+      iex> ExAws.CodePipeline.acknowledge_job(job_id, nonce)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -1325,9 +1327,11 @@ defmodule ExAws.CodePipeline do
   @doc """
   Confirms a job worker has received the specified job. Only used for partner actions.
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.acknowledge_third_party_job("ABCXYZ", "f4f4ff82-2d11-EXAMPLE", "3")
+      iex> job_id = "f4f4ff82-2d11-EXAMPLE"
+      iex> nonce = "3"
+      iex> ExAws.CodePipeline.acknowledge_third_party_job("ABCXYZ", job_id, nonce)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -1697,7 +1701,7 @@ defmodule ExAws.CodePipeline do
   `PollForJobs` for the custom action will fail after the action
   is marked for deletion. Only used for custom actions.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.delete_custom_action_type("Source", "AWS CodeDeploy", "1")
       %ExAws.Operation.JSON{
@@ -1729,9 +1733,9 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Deletes the specified pipeline.
+  Deletes the specified pipeline
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.delete_pipeline("MyPipeline")
       %ExAws.Operation.JSON{
@@ -1760,7 +1764,7 @@ defmodule ExAws.CodePipeline do
   @doc """
   Deletes a web hook.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.delete_webhook("MyWebhook")
       %ExAws.Operation.JSON{
@@ -1788,10 +1792,11 @@ defmodule ExAws.CodePipeline do
 
   @doc """
   Removes the connection between the webhook that was created by CodePipeline
-  and the external tool with events to be detected. Currently only supported
-  for webhooks that target an action type of GitHub.
+  and the external tool with events to be detected
 
-  ## Examples:
+  Currently only supported for webhooks that target an action type of GitHub.
+
+  ## Examples
 
       iex> ExAws.CodePipeline.deregister_webhook_with_third_party("MyWebhook")
       %ExAws.Operation.JSON{
@@ -1812,14 +1817,15 @@ defmodule ExAws.CodePipeline do
   """
   @spec deregister_webhook_with_third_party(webhook_name()) :: ExAws.Operation.JSON.t()
   def deregister_webhook_with_third_party(name) when is_binary(name) do
-    %{"webhookName" => name}
+    %{webhook_name: name}
+    |> Utils.camelize_map()
     |> request(:deregister_webhook_with_third_party)
   end
 
   @doc """
-  Prevents artifacts in a pipeline from transitioning to the next stage in the pipeline.
+  Prevents artifacts in a pipeline from transitioning to the next stage in the pipeline
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.disable_stage_transition("pipeline", "stage", "Inbound", "Removing")
       %ExAws.Operation.JSON{
@@ -1858,9 +1864,9 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Enables artifacts in a pipeline to transition to a stage in a pipeline.
+  Enables artifacts in a pipeline to transition to a stage in a pipeline
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.enable_stage_transition("pipeline", "stage", "Inbound")
       %ExAws.Operation.JSON{
@@ -1896,7 +1902,7 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Returns information about a job. Only used for custom actions.
+  Returns information about a job. Only used for custom actions
 
   ## Important
 
@@ -1905,16 +1911,17 @@ defmodule ExAws.CodePipeline do
   requires access to that Amazon S3 bucket for input or output artifacts.
   Additionally, this API returns any secret values defined for the action.
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.get_job_details("MyJob")
+      iex> job_id = "f4f4ff82-2d11-EXAMPLE"
+      iex> ExAws.CodePipeline.get_job_details(job_id)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
         parser: &Function.identity/1,
         error_parser: &Function.identity/1,
         path: "/",
-        data: %{"jobId" => "MyJob"},
+        data: %{"jobId" => "f4f4ff82-2d11-EXAMPLE"},
         params: %{},
         headers: [
           {"x-amz-target", "CodePipeline_20150709.GetJobDetails"},
@@ -1924,7 +1931,7 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec get_job_details(binary()) :: ExAws.Operation.JSON.t()
+  @spec get_job_details(job_id()) :: ExAws.Operation.JSON.t()
   def get_job_details(job_id) do
     %{job_id: job_id}
     |> Utils.camelize_map()
@@ -1932,13 +1939,13 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Returns the metadata, structure, stages, and actions of a pipeline.
+  Returns the metadata, structure, stages, and actions of a pipeline
 
   Can be used to return the entire structure of a pipeline in JSON format,
   which can then be modified and used to update the pipeline structure
   with update_pipeline.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.get_pipeline("MyPipeline", [version: 1])
       %ExAws.Operation.JSON{
@@ -1958,7 +1965,7 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec get_pipeline(pipeline_name(), get_pipeline_options()) :: ExAws.Operation.JSON.t()
-  def get_pipeline(name, get_pipeline_options \\ []) do
+  def get_pipeline(name, get_pipeline_options \\ %{}) do
     get_pipeline_options
     |> keyword_to_map()
     |> Map.merge(%{name: name})
@@ -1969,11 +1976,13 @@ defmodule ExAws.CodePipeline do
   @doc """
   Returns information about an execution of a pipeline, including details
   about artifacts, the pipeline execution ID, and the name, version, and
-  status of the pipeline.
+  status of the pipeline
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.get_pipeline_execution("MyPipeline", "executionId")
+      iex> pipeline_name = "MyPipeline"
+      iex> pipeline_execution_id = "0244417fff"
+      iex> ExAws.CodePipeline.get_pipeline_execution(pipeline_name, pipeline_execution_id)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -1981,7 +1990,7 @@ defmodule ExAws.CodePipeline do
         error_parser: &Function.identity/1,
         path: "/",
         data: %{
-          "pipelineExecutionId" => "executionId",
+          "pipelineExecutionId" => "0244417fff",
           "pipelineName" => "MyPipeline"
         },
         params: %{},
@@ -2001,11 +2010,12 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Returns information about the state of a pipeline, including the stages and actions.
+  Returns information about the state of a pipeline, including the stages and actions
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.get_pipeline_state("MyPipeline")
+      iex> pipeline_name = "MyPipeline"
+      iex> ExAws.CodePipeline.get_pipeline_state(pipeline_name)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -2030,23 +2040,25 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Requests the details of a job for a third party action. Only used for partner actions.
+  Requests the details of a job for a third party action. Only used for partner actions
 
   IMPORTANT: When this API is called, AWS CodePipeline returns temporary credentials
   for the Amazon S3 bucket used to store artifacts for the pipeline, if the action
   requires access to that Amazon S3 bucket for input or output artifacts. Additionally,
   this API returns any secret values defined for the action.
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.get_third_party_job_details("MyJob", "ClientToken")
+      iex> job_id = "f4f4ff82-2d11-EXAMPLE"
+      iex> client_token = "ClientToken"
+      iex> ExAws.CodePipeline.get_third_party_job_details(job_id, client_token)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
         parser: &Function.identity/1,
         error_parser: &Function.identity/1,
         path: "/",
-        data: %{"clientToken" => "ClientToken", "jobId" => "MyJob"},
+        data: %{"clientToken" => "ClientToken", "jobId" => "f4f4ff82-2d11-EXAMPLE"},
         params: %{},
         headers: [
           {"x-amz-target", "CodePipeline_20150709.GetThirdPartyJobDetails"},
@@ -2064,11 +2076,12 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Gets a summary of all AWS CodePipeline action types associated with your account.
+  Gets a summary of all AWS CodePipeline action types associated with your account
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.list_action_types([action_owner_filter: "MyFilter", next_token: "ClientToken"])
+      iex> list_action_types_options = [action_owner_filter: "MyFilter", next_token: "ClientToken"]
+      iex> ExAws.CodePipeline.list_action_types(list_action_types_options)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -2086,7 +2099,7 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec list_action_types(list_action_types_options()) :: ExAws.Operation.JSON.t()
-  def list_action_types(list_action_types_options \\ []) do
+  def list_action_types(list_action_types_options \\ %{}) do
     list_action_types_options
     |> keyword_to_map()
     |> Utils.camelize_map()
@@ -2094,9 +2107,9 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Gets a summary of the most recent executions for a pipeline.
+  Gets a summary of the most recent executions for a pipeline
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.list_pipeline_executions("MyPipeline")
       %ExAws.Operation.JSON{
@@ -2116,7 +2129,7 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec list_pipeline_executions(pipeline_name(), list_pipeline_executions_options()) :: ExAws.Operation.JSON.t()
-  def list_pipeline_executions(pipeline_name, list_pipeline_executions_options \\ []) do
+  def list_pipeline_executions(pipeline_name, list_pipeline_executions_options \\ %{}) do
     list_pipeline_executions_options
     |> keyword_to_map()
     |> Map.merge(%{pipeline_name: pipeline_name})
@@ -2125,9 +2138,9 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Gets a summary of all of the pipelines associated with your account.
+  Gets a summary of all of the pipelines associated with your account
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.list_pipelines()
       %ExAws.Operation.JSON{
@@ -2147,7 +2160,7 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec list_pipelines(list_pipelines_options()) :: ExAws.Operation.JSON.t()
-  def list_pipelines(list_pipelines_options \\ []) do
+  def list_pipelines(list_pipelines_options \\ %{}) do
     list_pipelines_options
     |> keyword_to_map()
     |> Utils.camelize_map()
@@ -2155,13 +2168,14 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Gets a listing of all the webhooks in this region for this account.
+  Gets a listing of all the webhooks in this region for this account
+
   The output lists all webhooks and includes the webhook URL and ARN,
   as well the configuration for each webhook.
 
   Note: If a secret token was provided, it will be redacted in the response.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.list_webhooks()
       %ExAws.Operation.JSON{
@@ -2181,7 +2195,7 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec list_webhooks(list_webhooks_options()) :: ExAws.Operation.JSON.t()
-  def list_webhooks(list_webhooks_options \\ []) do
+  def list_webhooks(list_webhooks_options \\ %{}) do
     list_webhooks_options
     |> keyword_to_map()
     |> Utils.camelize_map()
@@ -2189,14 +2203,16 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Returns information about any jobs for AWS CodePipeline to act upon.
-  poll_for_jobs is only valid for action types with "Custom" in the owner field.
+  Returns information about any jobs for AWS CodePipeline to act upon
+
+  The API `poll_for_jobs/2` is only valid for action types with "Custom" in the owner field.
   If the action type contains "AWS" or "ThirdParty" in the owner field, the
-  poll_for_jobs action returns an error.
+  `poll_for_jobs/2` call to the AWS API returns an error.
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.poll_for_jobs([category: "Build", owner: "AWS", provider: "AWS CodeDeploy", version: "1"])
+      iex> action_type_id = [category: "Build", owner: "AWS", provider: "AWS CodeDeploy", version: "1"]
+      iex> ExAws.CodePipeline.poll_for_jobs(action_type_id)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -2221,7 +2237,7 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec poll_for_jobs(action_type_id(), poll_for_jobs_optional()) :: ExAws.Operation.JSON.t()
-  def poll_for_jobs(action_type_id, poll_for_jobs_optional \\ []) do
+  def poll_for_jobs(action_type_id, poll_for_jobs_optional \\ %{}) do
     action_type_data = %{action_type_id: keyword_to_map(action_type_id)}
 
     poll_for_jobs_optional
@@ -2232,7 +2248,8 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Determines whether there are any third party jobs for a job worker to act on.
+  Determines whether there are any third party jobs for a job worker to act on
+
   Only used for partner actions.
 
   ## Important
@@ -2241,9 +2258,10 @@ defmodule ExAws.CodePipeline do
   the Amazon S3 bucket used to store artifacts for the pipeline, if the action
   requires access to that Amazon S3 bucket for input or output artifacts.
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.poll_for_third_party_jobs([category: "Build", owner: "Custom", provider: "MyProvider", version: "1"])
+      iex> action_type_id = [category: "Build", owner: "Custom", provider: "MyProvider", version: "1"]
+      iex> ExAws.CodePipeline.poll_for_third_party_jobs(action_type_id)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -2268,7 +2286,7 @@ defmodule ExAws.CodePipeline do
       }
   """
   @spec poll_for_third_party_jobs(action_type_id(), poll_for_third_party_jobs_optional()) :: ExAws.Operation.JSON.t()
-  def poll_for_third_party_jobs(action_type_id, poll_for_third_party_jobs_optional \\ []) do
+  def poll_for_third_party_jobs(action_type_id, poll_for_third_party_jobs_optional \\ %{}) do
     poll_for_third_party_jobs_optional
     |> keyword_to_map()
     |> Map.merge(%{action_type_id: keyword_to_map(action_type_id)})
@@ -2365,7 +2383,7 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec put_approval_result(pipeline_name(), binary(), stage_name(), approval_token(), approval_result()) ::
+  @spec put_approval_result(pipeline_name(), stage_name(), action_name(), approval_token(), approval_result()) ::
           ExAws.Operation.JSON.t()
   def put_approval_result(pipeline_name, stage_name, action_name, token, result) do
     %{
@@ -2380,12 +2398,14 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Represents the failure of a job as returned to the pipeline by a job worker.
+  Represents the failure of a job as returned to the pipeline by a job worker
+
   Only used for custom actions.
 
-  ## Examples:
+  ## Examples
 
-      iex> ExAws.CodePipeline.put_job_failure_result("MyJob", [external_execution_id: "id", message: "", type: "JobFailed"] )
+      iex> job_id = "f4f4ff82-2d11-EXAMPLE"
+      iex> ExAws.CodePipeline.put_job_failure_result(job_id, [external_execution_id: "id", message: "", type: "JobFailed"] )
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -2394,7 +2414,7 @@ defmodule ExAws.CodePipeline do
         path: "/",
         data: %{
           "externalExecutionId" => "id",
-          "jobId" => "MyJob",
+          "jobId" => "f4f4ff82-2d11-EXAMPLE",
           "message" => "",
           "type" => "JobFailed"
         },
@@ -2417,11 +2437,41 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Represents the success of a job as returned to the pipeline by a job worker.
+  Represents the success of a job as returned to the pipeline by a job worker
+
   Only used for custom actions.
+
+  ## Examples
+
+      iex> job_id = "f4f4ff82-2d11-EXAMPLE"
+      iex> revision = %{change_identifier: "Change20240711", revision: "23443ffEXAMPLE"}
+      iex> job_success_result = %{current_revision: revision, execution_details: %{percent_complete: 50}}
+      iex> ExAws.CodePipeline.put_job_success_result(job_id, job_success_result)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "currentRevision" => %{
+            "changeIdentifier" => "Change20240711",
+            "revision" => "23443ffEXAMPLE"
+          },
+          "executionDetails" => %{"percentComplete" => 50},
+          "jobId" => "f4f4ff82-2d11-EXAMPLE"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodePipeline_20150709.PutJobSuccessResult"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec put_job_success_result(job_id(), put_job_success_result_optional()) :: ExAws.Operation.JSON.t()
-  def put_job_success_result(job_id, put_job_success_result_optional \\ []) do
+  def put_job_success_result(job_id, put_job_success_result_optional \\ %{}) do
     put_job_success_result_optional
     |> keyword_to_map()
     |> Map.merge(%{job_id: job_id})
@@ -2430,17 +2480,14 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Represents the failure of a third party job as returned to the pipeline by a job worker.
+  Represents the failure of a third party job as returned to the pipeline by a job worker
+
   Only used for partner actions.
   """
   @spec put_third_party_job_failure_result(job_id(), client_token(), failure_details()) :: ExAws.Operation.JSON.t()
   def put_third_party_job_failure_result(job_id, client_token, failure_details) do
-    details =
-      failure_details
-      |> keyword_to_map()
-      |> Utils.camelize_map()
-
-    %{"jobId" => job_id, "clientToken" => client_token, "failureDetails" => details}
+    %{job_id: job_id, client_token: client_token, failure_details: keyword_to_map(failure_details)}
+    |> Utils.camelize_map()
     |> request(:put_third_party_job_failure_result)
   end
 
@@ -2450,7 +2497,7 @@ defmodule ExAws.CodePipeline do
   """
   @spec put_third_party_job_success_result(job_id(), client_token(), put_third_party_job_success_result_optional()) ::
           ExAws.Operation.JSON.t()
-  def put_third_party_job_success_result(job_id, client_token, put_third_party_job_success_result \\ []) do
+  def put_third_party_job_success_result(job_id, client_token, put_third_party_job_success_result \\ %{}) do
     put_third_party_job_success_result
     |> keyword_to_map()
     |> Map.merge(%{job_id: job_id, client_token: client_token})
@@ -2459,18 +2506,16 @@ defmodule ExAws.CodePipeline do
   end
 
   @doc """
-  Defines a webhook and returns a unique webhook URL generated by
-  CodePipeline.
+  Defines a webhook and returns a unique webhook URL generated by CodePipeline
 
-  This URL can be supplied to third party source hosting
-  providers to call every time there's a code change. When CodePipeline
-  receives a POST request on this URL, the pipeline defined in the webhook is
-  started as long as the POST request satisfied the authentication and filtering
-  requirements supplied when defining the webhook. register_webhook_with_third_party
-  and deregister_webhook_with_third_party APIs can be used to automatically configure
-  supported third parties to call the generated webhook URL.
+  This URL can be supplied to third party source hosting providers to call every time there's a code
+  change. When CodePipeline receives a POST request on this URL, the pipeline defined in the webhook
+  is started as long as the POST request satisfied the authentication and filtering requirements
+  supplied when defining the webhook. register_webhook_with_third_party and
+  deregister_webhook_with_third_party APIs can be used to automatically configure supported third
+  parties to call the generated webhook URL.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.put_webhook("MyWebHook")
       %ExAws.Operation.JSON{
@@ -2491,20 +2536,16 @@ defmodule ExAws.CodePipeline do
   """
   @spec put_webhook(webhook_definition()) :: ExAws.Operation.JSON.t()
   def put_webhook(webhook) do
-    details =
-      webhook
-      |> keyword_to_map()
-      |> Utils.camelize_map()
-
-    %{"webhook" => details}
+    %{webhook: keyword_to_map(webhook)}
+    |> Utils.camelize_map()
     |> request(:put_webhook)
   end
 
   @doc """
-  Configures a connection between the webhook that was created and
-  the external tool with events to be detected.
+  Configures a connection between the webhook that was created and the external tool with events to
+  be detected
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.register_webhook_with_third_party("MyWebHook")
       %ExAws.Operation.JSON{
@@ -2525,15 +2566,15 @@ defmodule ExAws.CodePipeline do
   """
   @spec register_webhook_with_third_party(webhook_name()) :: ExAws.Operation.JSON.t()
   def register_webhook_with_third_party(webhook_name) do
-    %{"webhookName" => webhook_name}
+    %{webhook_name: webhook_name}
+    |> Utils.camelize_map()
     |> request(:register_webhook_with_third_party)
   end
 
   @doc """
-  Resumes the pipeline execution by retrying the last failed
-  actions in a stage
+  Resumes the pipeline execution by retrying the last failed actions in a stage
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.retry_stage_execution("MyPipeline", "MyStage", "ExecutionId")
       %ExAws.Operation.JSON{
@@ -2560,21 +2601,22 @@ defmodule ExAws.CodePipeline do
   @spec retry_stage_execution(pipeline_name(), binary(), binary(), binary()) :: ExAws.Operation.JSON.t()
   def retry_stage_execution(pipeline_name, stage_name, pipeline_execution_id, retry_mode \\ "FAILED_ACTIONS") do
     %{
-      "pipelineExecutionId" => pipeline_execution_id,
-      "pipelineName" => pipeline_name,
-      "retryMode" => retry_mode,
-      "stageName" => stage_name
+      pipeline_execution_id: pipeline_execution_id,
+      pipeline_name: pipeline_name,
+      retry_mode: retry_mode,
+      stage_name: stage_name
     }
+    |> Utils.camelize_map()
     |> request(:retry_stage_execution)
   end
 
   @doc """
-  Starts the specified pipeline.
+  Starts the specified pipeline
 
   Specifically, it begins processing the latest commit to the
   source location specified as part of the pipeline.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodePipeline.start_pipeline_execution("MyPipeline", [client_request_token: "Test"])
       %ExAws.Operation.JSON{
@@ -2593,8 +2635,8 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec start_pipeline_execution(binary(), start_pipeline_execution_optional()) :: ExAws.Operation.JSON.t()
-  def start_pipeline_execution(name, start_pipeline_execution_optional \\ []) do
+  @spec start_pipeline_execution(pipeline_name(), start_pipeline_execution_optional()) :: ExAws.Operation.JSON.t()
+  def start_pipeline_execution(name, start_pipeline_execution_optional \\ %{}) do
     start_pipeline_execution_optional
     |> keyword_to_map()
     |> Map.merge(%{name: name})
@@ -2608,15 +2650,132 @@ defmodule ExAws.CodePipeline do
   Use a JSON file with the pipeline structure in conjunction with update_pipeline
   to provide the full structure of the pipeline. Updating the pipeline increases
   the version number of the pipeline by 1.
+
+      iex> %{
+      ...>  role_arn: "arn:aws:iam::111111111111:role/AWS-CodePipeline-Service",
+      ...>  stages: [
+      ...>    %{
+      ...>      name: "Source",
+      ...>      actions: [
+      ...>        %{
+      ...>          name: "Source",
+      ...>          action_type_id: %{
+      ...>            owner: "AWS",
+      ...>            version: "1",
+      ...>            category: "Source",
+      ...>            provider: "S3"
+      ...>          },
+      ...>          configuration: %{
+      ...>            "S3Bucket" => "awscodepipeline-demo-bucket",
+      ...>            "S3ObjectKey" => "aws-codepipeline-s3-aws-codedeploy_linux.zip"
+      ...>          },
+      ...>          input_artifacts: [],
+      ...>          run_order: 1,
+      ...>          output_artifacts: [%{name: "MyApp"}]
+      ...>        }
+      ...>      ]
+      ...>    },
+      ...>    %{
+      ...>      name: "MySecondPipeline",
+      ...>      version: 1,
+      ...>      artifact_store: %{
+      ...>        type: "S3",
+      ...>        location: "codepipeline-us-east-1-11EXAMPLE11"
+      ...>      },
+      ...>      actions: [
+      ...>        %{
+      ...>          name: "CodePipelineDemoFleet",
+      ...>          action_type_id: %{
+      ...>            owner: "AWS",
+      ...>            version: "1",
+      ...>            category: "Deploy",
+      ...>            provider: "CodeDeploy"
+      ...>          },
+      ...>          configuration: %{
+      ...>            "ApplicationName" => "CodePipelineDemoApplication",
+      ...>            "DeploymentGroupName" => "CodePipelineDemoFleet"
+      ...>          },
+      ...>          input_artifacts: [%{name: "MyApp"}],
+      ...>          run_order: 1,
+      ...>          output_artifacts: []
+      ...>        }
+      ...>      ]
+      ...>    }
+      ...>  ]
+      ...>} |> ExAws.CodePipeline.update_pipeline()
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "pipeline" => %{
+            "roleArn" => "arn:aws:iam::111111111111:role/AWS-CodePipeline-Service",
+            "stages" => [
+              %{
+                "actions" => [
+                  %{
+                    "actionTypeId" => %{
+                      "category" => "Source",
+                      "owner" => "AWS",
+                      "provider" => "S3",
+                      "version" => "1"
+                    },
+                    "configuration" => %{
+                      "S3Bucket" => "awscodepipeline-demo-bucket",
+                      "S3ObjectKey" => "aws-codepipeline-s3-aws-codedeploy_linux.zip"
+                    },
+                    "inputArtifacts" => [],
+                    "name" => "Source",
+                    "outputArtifacts" => [%{"name" => "MyApp"}],
+                    "runOrder" => 1
+                  }
+                ],
+                "name" => "Source"
+              },
+              %{
+                "actions" => [
+                  %{
+                    "actionTypeId" => %{
+                      "category" => "Deploy",
+                      "owner" => "AWS",
+                      "provider" => "CodeDeploy",
+                      "version" => "1"
+                    },
+                    "configuration" => %{
+                      "ApplicationName" => "CodePipelineDemoApplication",
+                      "DeploymentGroupName" => "CodePipelineDemoFleet"
+                    },
+                    "inputArtifacts" => [%{"name" => "MyApp"}],
+                    "name" => "CodePipelineDemoFleet",
+                    "outputArtifacts" => [],
+                    "runOrder" => 1
+                  }
+                ],
+                "artifactStore" => %{
+                  "location" => "codepipeline-us-east-1-11EXAMPLE11",
+                  "type" => "S3"
+                },
+                "name" => "MySecondPipeline",
+                "version" => 1
+              }
+            ]
+          }
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodePipeline_20150709.UpdatePipeline"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codepipeline,
+        before_request: nil
+      }
   """
   @spec update_pipeline(pipeline_declaration()) :: ExAws.Operation.JSON.t()
-  def update_pipeline(pipeline) do
-    details =
-      pipeline
-      |> keyword_to_map()
-      |> Utils.camelize_map()
-
-    %{"pipeline" => details}
+  def update_pipeline(pipeline_declaration) do
+    %{pipeline: keyword_to_map(pipeline_declaration)}
+    |> Utils.camelize_map()
     |> request(:update_pipeline)
   end
 
@@ -2628,6 +2787,7 @@ defmodule ExAws.CodePipeline do
   The action has to be an atom that aligns with one of the CodePipeline
   API calls (see calls above for examples).
   """
+  @spec direct_request(atom(), map()) :: ExAws.Operation.JSON.t()
   def direct_request(action, data) do
     request(data, action)
   end
