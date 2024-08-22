@@ -6,9 +6,13 @@ defmodule ExAws.CodePipeline do
   CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Operations.html).
   The AWS documentation is the definitive source of information and should be consulted to
   understand how to use CodePipeline and its API functions. The documentation on types and
-  functions in the library may be helpful but it should not be considered definitive. The
-  library documentation does try to provide valid values, length restrictions, and any pattern
-  matching that is defined as acceptable by the AWS API.
+  functions in the library may be helpful but it is merely helpful. It does not attempt to
+  provide an explanation for how to use CodePipeline.
+
+  The library does not try to provide proection against invalid values, length restriction
+  violations, or violations of pattern matching defined in the API documentation. There is some
+  minimal checking for correct types but, generally, the data passed by app is converted to
+  a JSON representation and the error will be returned by the API when it is called.
 
   Generally the functions take required parameters separately from any optional arguments. The
   optional arguments are passed as a Map (with a defined type).
@@ -18,6 +22,9 @@ defmodule ExAws.CodePipeline do
   keys use a lower-case letter for the first word and upper-case for the subsequent words. If there
   are exceptions to this rule they are handled by the library so an Elixir developer can just use
   standard snake-case for all the keys.
+
+  The CodePipeline API is broad. If you find errors in this code then please submit a PR so that
+  any issues I've missed can be resolved as quickly as possible.
 
   ## Description
 
@@ -201,10 +208,13 @@ defmodule ExAws.CodePipeline do
   @type version() :: binary()
 
   @typedoc """
-  The maximum number of pipelines to return in a single call
+  The maximum number of results to return in a single call
 
-  To retrieve the remaining pipelines, make another call with the returned nextToken value. The
-  minimum value you can specify is 1. The maximum accepted value is 1000.
+  ## Notes
+
+  To retrieve the remaining results, make another call with the returned nextToken value. Pipeline
+  history is limited to the most recent 12 months, based on pipeline execution start times. Default
+  value is 100.
 
   - Valid Range: Minimum value of 1. Maximum value of 1000.
   """
@@ -671,13 +681,6 @@ defmodule ExAws.CodePipeline do
           | %{required(:key) => tag_key(), required(:value) => tag_value()}
 
   @typedoc """
-  Optional input to `list_pipelines/1`
-  """
-  @type list_pipelines_optional() ::
-          [{:next_token, next_token()}, {:max_results, max_results()}]
-          | %{optional(:next_token) => next_token(), optional(:max_results) => max_results()}
-
-  @typedoc """
   Filter for pipeline executions that have successfully completed the stage in the current pipeline
   version
 
@@ -697,29 +700,6 @@ defmodule ExAws.CodePipeline do
           | %{optional(:succeeded_in_stage) => succeeded_in_stage_filter()}
 
   @typedoc """
-  Input to the `list_pipeline_executions/2` function
-
-  - filter - The pipeline execution to filter on. See `t:pipeline_execution_filter/0`.
-  - next_token - The token that was returned from the previous `list_pipeline_executions/2` call, which
-    can be used to return the next set of pipeline executions in the list.
-  - max_results - The maximum number of results to return in a single call. To retrieve the
-    remaining results, make another call with the returned next_token value. Pipeline history is
-    limited to the most recent 12 months, based on pipeline execution start times. Default value is
-    100.
-  """
-  @type list_pipeline_executions_optional ::
-          [
-            {:max_results, max_results()},
-            {:next_token, next_token()},
-            {:filter, pipeline_execution_filter()}
-          ]
-          | %{
-              optional(:next_token) => next_token(),
-              optional(:max_results) => max_results(),
-              optional(:filter) => pipeline_execution_filter()
-            }
-
-  @typedoc """
   Filter values for the rule execution
   """
   @type rule_execution_filter() ::
@@ -733,38 +713,6 @@ defmodule ExAws.CodePipeline do
             }
 
   @typedoc """
-  Optional input to `list_rule_executions/2`
-  """
-  @type list_rule_executions_optional() ::
-          [{:filter, rule_execution_filter()}, {:max_results, max_results()}, {:next_token, next_token()}]
-          | %{
-              optional(:filter) => rule_execution_filter(),
-              optional(:max_results) => max_results(),
-              optional(:next_token) => next_token()
-            }
-
-  @typedoc """
-  Optional input to `list_tags_for_resource/2`
-  """
-  @type list_tags_for_resource_optional() ::
-          [
-            {:max_results, max_results()},
-            {:next_token, next_token()}
-          ]
-          | %{
-              optional(:max_results) => max_results(),
-              optional(:next_token) => next_token()
-            }
-
-  @typedoc """
-  The version number of the pipeline. If you do not specify a version, defaults to the current
-  version
-
-  - Valid Range: Minimum value of 1.
-  """
-  @type get_pipeline_optional :: [{:version, integer}] | %{optional(:version) => integer()}
-
-  @typedoc """
   Represents information about the result of an approval request
   """
   @type approval_result() ::
@@ -773,6 +721,10 @@ defmodule ExAws.CodePipeline do
 
   @typedoc """
   The details about the failure of a job
+
+  - external_execution_id - The external ID of the run of the action that failed
+  - message - The message about the failure
+  - type - The type of the failure
   """
   @type failure_details() ::
           [
@@ -872,6 +824,9 @@ defmodule ExAws.CodePipeline do
   @typedoc """
   The encryption key used to encrypt the data in the artifact store, such as an AWS Key Management
   Service key. If this is undefined, the default key for Amazon S3 is used.
+
+  - type - The type of encryption key, such as an AWS KMS key
+  - id - The ID used to identify the key
   """
   @type encryption_key() ::
           [{:type, encryption_key_type()}, {:id, encryption_key_id()}]
@@ -882,6 +837,11 @@ defmodule ExAws.CodePipeline do
 
   _Note: You must include either artifact_store or artifact_stores in your pipeline, but you cannot
   use both. If you create a cross-region action in your pipeline, you must use artifact_stores_.
+
+  - encryption_key - The encryption key used to encrypt the data in the artifact store, such as an
+    AWS Key Management Service key
+  - location - The S3 bucket used for storing the artifacts for a pipeline
+  - type - The type of the artifact store, such as S3
   """
   @type artifact_store() ::
           [
@@ -898,6 +858,12 @@ defmodule ExAws.CodePipeline do
   @typedoc """
   Represents information about an action type. See [Valid Action Types and Providers in
   CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html#actions-valid-providers).
+
+  - category - A category defines what kind of action can be taken in the stage, and constrains the
+    provider type for the action
+  - owner - The creator of the action being called
+  - provider - The provider of the service being called by the action
+  - version - A string that describes the action version
   """
   @type action_type_id() ::
           [
@@ -987,44 +953,6 @@ defmodule ExAws.CodePipeline do
   @type stage_declaration() ::
           [{:actions, [action_declaration()]}, {:blockers, [blocker_declaration()]}]
           | %{required(:actions) => [action_declaration()], optional(:blockers) => [blocker_declaration()]}
-
-  @typedoc """
-  Optional input to the `create_custom_action_type/5` function
-
-  - configuration_properties - The configuration properties for the custom action.
-  - settings - URLs that provide users information about this custom action
-  - tags - The tags for the custom action
-  """
-  @type create_custom_action_type_optional() ::
-          [
-            {:configuration_properties, [action_configuration_property()]},
-            {:settings, action_type_setting()},
-            {:tags, [tag()]}
-          ]
-          | %{
-              optional(:configuration_properties) => [action_configuration_property()],
-              optional(:settings) => action_type_setting(),
-              optional(:tags) => [tag()]
-            }
-
-  @typedoc """
-  Optional input to `t:update_action_type/0`
-
-  - configuration_properties - The configuration properties for the custom action.
-  - settings - URLs that provide users information about this custom action
-  - tags - The tags for the custom action
-  """
-  @type update_action_type_optional() ::
-          [
-            {:configuration_properties, [action_configuration_property()]},
-            {:settings, action_type_setting()},
-            {:tags, [tag()]}
-          ]
-          | %{
-              optional(:configuration_properties) => [action_configuration_property()],
-              optional(:settings) => action_type_setting(),
-              optional(:tags) => [tag()]
-            }
 
   @typedoc """
   The method that the pipeline will use to handle multiple executions
@@ -1180,37 +1108,13 @@ defmodule ExAws.CodePipeline do
             }
 
   @typedoc """
-  Optional input for function `poll_for_jobs/3`
-
-  - max_batch_size - The maximum number of jobs to return in a poll for jobs call.
-  - query_param - A map of property names and values.
-  """
-  @type poll_for_jobs_optional() ::
-          [{:max_batch_size, max_batch_size()}, {:query_param, query_param()}]
-          | %{optional(:max_batch_size) => max_batch_size(), optional(:query_param) => query_param()}
-
-  @typedoc """
-  Optional input to `list_webhooks/1`
-  """
-  @type list_webhooks_optional ::
-          [{:max_results, max_results()}, {:next_token, next_token()}]
-          | %{optional(:max_results) => max_results(), optional(:next_token) => next_token()}
-
-  @typedoc """
-  Optional input for function `poll_for_third_party_jobs/2`
-
-  - max_batch_size - The maximum number of jobs to return in a poll for jobs call.
-  """
-  @type poll_for_third_party_jobs_optional() ::
-          [{:max_batch_size, integer()}] | %{optional(:max_batch_size) => pos_integer()}
-
-  @typedoc """
   Optional input for function `put_job_success_result/2`
 
   - external_execution_id - The system-generated unique ID of this action used to identify this job
     worker in any external systems, such as CodeDeploy.
   - percent_complete - The percentage of work completed on the action, represented on a scale of 0
     to 100 percent.
+  - summary - The summary of the current status of the actions
   """
   @type execution_details() ::
           [
@@ -1267,31 +1171,15 @@ defmodule ExAws.CodePipeline do
   @type output_variables() :: %{output_variables_key() => output_variables_value()}
 
   @typedoc """
-  Optional input to `put_job_success_result/2`
+  The version number of the pipeline
 
-  - execution_details - The execution details of the successful job, such as the actions taken by
-    the job worker.
-  - current_revision - The ID of the current revision of the artifact successfully worked on by the
-    job
-  - continuation_token - A token generated by a job worker, such as a CodeDeploy deployment ID, that
-    a successful job provides to identify a custom action in progress.
-  - output_variables - Key-value pairs produced as output by a job worker that can be made available
-    to a downstream action configuration. output_variables can be included only when there is no
-    continuation token on the request.
+  ## Notes
+
+  If you do not specify a version, defaults to the current version
+
+  - Valid Range: Minimum value of 1.
   """
-  @type put_job_success_result_optional() ::
-          [
-            {:execution_details, execution_details},
-            {:current_revision, current_revision},
-            {:continuous_token, continuation_token()},
-            {:output_variables, output_variables()}
-          ]
-          | %{
-              optional(:execution_details) => execution_details(),
-              optional(:current_revision) => current_revision(),
-              optional(:continuation_token) => continuation_token(),
-              optional(:output_variables) => output_variables()
-            }
+  @type pipeline_version() :: integer()
 
   @typedoc """
   The start time to filter on for the latest execution in the pipeline
@@ -1309,6 +1197,9 @@ defmodule ExAws.CodePipeline do
   ## Notes
 
   Filtering on the latest execution is available for executions run on or after February 08, 2024.
+
+  - pipeline_execution_id - The execution ID for the latest execution in the pipeline
+  - start_time_range - The start time to filter on for the latest execution in the pipeline
   """
   @type latest_in_pipeline_execution_filter() ::
           [
@@ -1336,44 +1227,13 @@ defmodule ExAws.CodePipeline do
             }
 
   @typedoc """
-  Optional input to `list_action_executions/2`
-  """
-  @type list_action_executions_optional() ::
-          [
-            {:filter, action_execution_filter()},
-            {:max_results, max_results()},
-            {:next_token, next_token()}
-          ]
-          | %{
-              optional(:filter) => action_execution_filter(),
-              optional(:max_results) => max_results(),
-              optional(:next_token) => next_token()
-            }
-
-  @typedoc """
-  Used to get a summary of all CodePipeline action types associated with your account.
-  """
-  @type list_action_types_optional() ::
-          [
-            {:action_owner_filter, action_owner_filter()},
-            {:next_token, next_token()},
-            {:region_filter, region_filter()}
-          ]
-          | %{
-              optional(:action_owner_filter) => action_owner_filter(),
-              optional(:next_token) => next_token(),
-              optional(:region_filter) => region_filter()
-            }
-
-  @typedoc """
-  Optional input to `list_rule_types/1`
-  """
-  @type list_rule_types_optional() ::
-          [{:region_filter, region_filter()}, {:rule_owner_filter, rule_owner_filter()}]
-          | %{optional(:region_filter) => region_filter(), optional(:rule_owner_filter) => rule_owner_filter()}
-
-  @typedoc """
   Represents information about the version (or revision) of an action
+
+  - created - The date and time when the most recent version of the action was created, in timestamp
+    format.
+  - revision_change_id - The unique identifier of the change that set the state to this revision
+    (for example, a deployment ID or timestamp)
+  - revision_id - The system-generated unique ID that identifies the revision number of the action
   """
   @type action_revision() ::
           [
@@ -1386,39 +1246,6 @@ defmodule ExAws.CodePipeline do
               required(:revision_change_id) => revision_change_id(),
               required(:revision_id) => revision_id()
             }
-
-  @typedoc """
-  Optional input arguments for `put_third_party_job_success_result/3`
-
-  - continuation_token - A token generated by a job worker, such as a CodeDeploy deployment ID, that
-    a successful job provides to identify a partner action in progress
-  - current_revision - Represents information about a current revision
-  - execution_details - The details of the actions taken and results produced on an artifact as it
-    passes through stages in the pipeline
-  """
-  @type put_third_party_job_success_result_optional() ::
-          [
-            {:continuation_token, continuation_token()},
-            {:current_revision, current_revision()},
-            {:execution_details, execution_details()}
-          ]
-          | %{
-              optional(:continuation_token) => continuation_token(),
-              optional(:current_revision) => current_revision(),
-              optional(:execution_details) => execution_details()
-            }
-
-  @typedoc """
-  Optional input arguments for `start_pipeline_execution/2`
-
-  - client_request_token - The system-generated unique ID used to identify a unique execution
-    request.
-  """
-  @type start_pipeline_execution_optional() ::
-          [
-            {:client_request_token, client_request_token()}
-          ]
-          | %{optional(:client_request_token) => client_request_token()}
 
   @typedoc """
   Properties that configure the authentication applied to incoming webhook trigger requests.
@@ -1446,7 +1273,7 @@ defmodule ExAws.CodePipeline do
   - match_equals - The value selected by the JsonPath expression must match what is supplied in the
     MatchEquals field.
   """
-  @type webhook_filter_rule ::
+  @type webhook_filter_rule() ::
           [
             {:json_path, json_path()},
             {:match_equals, match_equals()}
@@ -1455,8 +1282,16 @@ defmodule ExAws.CodePipeline do
 
   @typedoc """
   Represents information about a webhook and its definition.
+
+  - authentication - Supported options are "GITHUB_HMAC", "IP", and "UNAUTHENTICATED"
+  - authentication_configuration - Properties that configure the authentication applied to incoming
+    webhook trigger requests
+  - filters - A list of rules applied to the body/payload sent in the POST request to a webhook URL
+  - name - The name of the webhook
+  - target_action - The name of the action in a pipeline you want to connect to the webhook
+  - target_pipeline - The name of the pipeline you want to connect to the webhook
   """
-  @type webhook_definition ::
+  @type webhook_definition() ::
           [
             {:authentication, authentication()},
             {:authentication_configuration, authentication_configuration()},
@@ -1482,12 +1317,260 @@ defmodule ExAws.CodePipeline do
   @type stop_pipeline_execution_reason() :: binary()
 
   @typedoc """
-  Optional input to `stop_pipeline_execution/3`
+  Optional input for function `list_pipelines/1`
+
+  - next_token - An identifier that was returned from the previous list pipelines call. It can be
+    used to return the next set of pipelines in the list
+  - max_results - The maximum number of results to return in a single call
+  """
+  @type list_pipelines_optional() ::
+          [{:next_token, next_token()}, {:max_results, max_results()}]
+          | %{optional(:next_token) => next_token(), optional(:max_results) => max_results()}
+
+  @typedoc """
+  Optional input for function `list_pipeline_executions/2`
+
+  - filter - The pipeline execution to filter on. See `t:pipeline_execution_filter/0`.
+  - next_token - The token that was returned from the previous `list_pipeline_executions/2` call, which
+  can be used to return the next set of pipeline executions in the list.
+  - max_results - The maximum number of results to return in a single call
+  """
+  @type list_pipeline_executions_optional() ::
+          [
+            {:max_results, max_results()},
+            {:next_token, next_token()},
+            {:filter, pipeline_execution_filter()}
+          ]
+          | %{
+              optional(:next_token) => next_token(),
+              optional(:max_results) => max_results(),
+              optional(:filter) => pipeline_execution_filter()
+            }
+
+  @typedoc """
+  Optional input for function `list_rule_executions/2`
+
+  - filter - Input information used to filter rule execution history
+  - max_results - The maximum number of results to return in a single call
+  - next_token - The token that was returned from the previous `list_rule_executions/2` call, which
+    can be used to return the next set of rule executions in the list
+  """
+  @type list_rule_executions_optional() ::
+          [{:filter, rule_execution_filter()}, {:max_results, max_results()}, {:next_token, next_token()}]
+          | %{
+              optional(:filter) => rule_execution_filter(),
+              optional(:max_results) => max_results(),
+              optional(:next_token) => next_token()
+            }
+
+  @typedoc """
+  Optional input for function `list_tags_for_resource/2`
+
+  - next_token - The token that was returned from the previous API call, which would be used to
+    return the next page of the list. Note. The `list_tags_for_resource/2` call lists all available
+    tags in one call and does not use pagination.
+  - max_results - The maximum number of results to return in a single call
+  """
+  @type list_tags_for_resource_optional() ::
+          [
+            {:max_results, max_results()},
+            {:next_token, next_token()}
+          ]
+          | %{
+              optional(:max_results) => max_results(),
+              optional(:next_token) => next_token()
+            }
+
+  @typedoc """
+  Optional input for function `get_pipeline/2` function
+
+  - version - The version number of the pipeline
+  """
+  @type get_pipeline_optional() :: [{:version, pipeline_version()}] | %{optional(:version) => pipeline_version()}
+
+  @typedoc """
+  Optional input for function `create_custom_action_type/5` function
+
+  - configuration_properties - The configuration properties for the custom action.
+  - settings - URLs that provide users information about this custom action
+  - tags - The tags for the custom action
+  """
+  @type create_custom_action_type_optional() ::
+          [
+            {:configuration_properties, [action_configuration_property()]},
+            {:settings, action_type_setting()},
+            {:tags, [tag()]}
+          ]
+          | %{
+              optional(:configuration_properties) => [action_configuration_property()],
+              optional(:settings) => action_type_setting(),
+              optional(:tags) => [tag()]
+            }
+
+  @typedoc """
+  Optional input for function `update_action_type/6`
+
+  - configuration_properties - The configuration properties for the custom action.
+  - settings - URLs that provide users information about this custom action
+  - tags - The tags for the custom action
+  """
+  @type update_action_type_optional() ::
+          [
+            {:configuration_properties, [action_configuration_property()]},
+            {:settings, action_type_setting()},
+            {:tags, [tag()]}
+          ]
+          | %{
+              optional(:configuration_properties) => [action_configuration_property()],
+              optional(:settings) => action_type_setting(),
+              optional(:tags) => [tag()]
+            }
+
+  @typedoc """
+  Optional input for function `poll_for_jobs/3`
+
+  - max_batch_size - The maximum number of jobs to return in a poll for jobs call.
+  - query_param - A map of property names and values.
+  """
+  @type poll_for_jobs_optional() ::
+          [{:max_batch_size, max_batch_size()}, {:query_param, query_param()}]
+          | %{optional(:max_batch_size) => max_batch_size(), optional(:query_param) => query_param()}
+
+  @typedoc """
+  Optional input to for function `list_webhooks/1`
+
+  - max_results - The maximum number of results to return in a single call
+  - next_token - The token that was returned from the previous `list_webhooks/1` call, which can be
+    used to return the next set of webhooks in the list
+  """
+  @type list_webhooks_optional() ::
+          [{:max_results, max_results()}, {:next_token, next_token()}]
+          | %{optional(:max_results) => max_results(), optional(:next_token) => next_token()}
+
+  @typedoc """
+  Optional input for function `poll_for_third_party_jobs/2`
+
+  - max_batch_size - The maximum number of jobs to return in a poll for jobs call.
+  """
+  @type poll_for_third_party_jobs_optional() ::
+          [{:max_batch_size, integer()}] | %{optional(:max_batch_size) => pos_integer()}
+
+  @typedoc """
+  Optional input for function `put_job_success_result/2`
+
+  - execution_details - The execution details of the successful job, such as the actions taken by
+  the job worker.
+  - current_revision - The ID of the current revision of the artifact successfully worked on by the
+  job
+  - continuation_token - A token generated by a job worker, such as a CodeDeploy deployment ID, that
+  a successful job provides to identify a custom action in progress.
+  - output_variables - Key-value pairs produced as output by a job worker that can be made available
+  to a downstream action configuration. output_variables can be included only when there is no
+  continuation token on the request.
+  """
+  @type put_job_success_result_optional() ::
+          [
+            {:execution_details, execution_details},
+            {:current_revision, current_revision},
+            {:continuous_token, continuation_token()},
+            {:output_variables, output_variables()}
+          ]
+          | %{
+              optional(:execution_details) => execution_details(),
+              optional(:current_revision) => current_revision(),
+              optional(:continuation_token) => continuation_token(),
+              optional(:output_variables) => output_variables()
+            }
+
+  @typedoc """
+  Optional input for function `list_action_executions/2`
+
+  - filter - Filter values for the action execution
+  - max_results - The maximum number of results to return in a single call
+  - next_token - The token that was returned from the previous `list_action_executions/2` call,
+    which can be used to return the next set of action executions in the list
+  """
+  @type list_action_executions_optional() ::
+          [
+            {:filter, action_execution_filter()},
+            {:max_results, max_results()},
+            {:next_token, next_token()}
+          ]
+          | %{
+              optional(:filter) => action_execution_filter(),
+              optional(:max_results) => max_results(),
+              optional(:next_token) => next_token()
+            }
+
+  @typedoc """
+  Optional input for function `list_action_types/1`
+
+  - action_owner_filter - Filters the list of action types to those created by a specified entity
+  - next_token - An identifier that was returned from the previous list action types call, which can
+    be used to return the next set of action types in the list
+  - region_filter - The Region to filter on for the list of action types
+  """
+  @type list_action_types_optional() ::
+          [
+            {:action_owner_filter, action_owner_filter()},
+            {:next_token, next_token()},
+            {:region_filter, region_filter()}
+          ]
+          | %{
+              optional(:action_owner_filter) => action_owner_filter(),
+              optional(:next_token) => next_token(),
+              optional(:region_filter) => region_filter()
+            }
+
+  @typedoc """
+  Optional input for function `list_rule_types/1`
+
+  - region_filter - The rule Region to filter on
+  - rule_owner_filter - The rule owner to filter on
+  """
+  @type list_rule_types_optional() ::
+          [{:region_filter, region_filter()}, {:rule_owner_filter, rule_owner_filter()}]
+          | %{optional(:region_filter) => region_filter(), optional(:rule_owner_filter) => rule_owner_filter()}
+
+  @typedoc """
+  Optional input for function `put_third_party_job_success_result/3`
+
+  - continuation_token - A token generated by a job worker, such as a CodeDeploy deployment ID, that
+  a successful job provides to identify a partner action in progress
+  - current_revision - Represents information about a current revision
+  - execution_details - The details of the actions taken and results produced on an artifact as it
+  passes through stages in the pipeline
+  """
+  @type put_third_party_job_success_result_optional() ::
+          [
+            {:continuation_token, continuation_token()},
+            {:current_revision, current_revision()},
+            {:execution_details, execution_details()}
+          ]
+          | %{
+              optional(:continuation_token) => continuation_token(),
+              optional(:current_revision) => current_revision(),
+              optional(:execution_details) => execution_details()
+            }
+
+  @typedoc """
+  Optional input for function `start_pipeline_execution/2`
+
+  - client_request_token - The system-generated unique ID used to identify a unique execution
+  request.
+  """
+  @type start_pipeline_execution_optional() ::
+          [{:client_request_token, client_request_token()}]
+          | %{optional(:client_request_token) => client_request_token()}
+
+  @typedoc """
+  Optional input for function `stop_pipeline_execution/3`
 
   ## Notes
 
   - abandon - Use this option to stop the pipeline execution by abandoning, rather than finishing,
     in-progress actions. This option can lead to failed or out-of-sequence tasks.
+  - reason - Use this option to enter comments, such as the reason the pipeline was stopped
   """
   @type stop_pipeline_execution_optional() ::
           [{:abandon, boolean()}, {:reason, stop_pipeline_execution_reason()}]
@@ -3036,14 +3119,36 @@ defmodule ExAws.CodePipeline do
 
   ## Examples
 
-      iex> ExAws.CodePipeline.put_webhook("MyWebHook")
+      iex> webhook_definition = %{
+      ...>  authentication: "IP",
+      ...>  authentication_configuration: %{
+      ...>    allowed_IP_range: "192.168.0.15/24"
+      ...>  },
+      ...>  filters: [%{json_path: "$.ref", match_equals: "refs/heads/{Branch}"}],
+      ...>  name: "MyWebHook",
+      ...>  target_action: "source_action_name",
+      ...>  target_pipeline: "pipeline_name"
+      ...>}
+      iex> ExAws.CodePipeline.put_webhook(webhook_definition)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
         parser: &Function.identity/1,
         error_parser: &Function.identity/1,
         path: "/",
-        data: %{"webhook" => "MyWebHook"},
+        data: %{
+          "tags" => [],
+          "webhook" => %{
+            "authentication" => "IP",
+            "authenticationConfiguration" => %{"allowedIPRange" => "192.168.0.15/24"},
+            "filters" => [
+              %{"jsonPath" => "$.ref", "matchEquals" => "refs/heads/{Branch}"}
+            ],
+            "name" => "MyWebHook",
+            "targetAction" => "source_action_name",
+            "targetPipeline" => "pipeline_name"
+          }
+        },
         params: %{},
         headers: [
           {"x-amz-target", "CodePipeline_20150709.PutWebhook"},
@@ -3053,9 +3158,15 @@ defmodule ExAws.CodePipeline do
         before_request: nil
       }
   """
-  @spec put_webhook(webhook_definition()) :: ExAws.Operation.JSON.t()
-  def put_webhook(webhook) do
-    %{webhook: webhook}
+  @spec put_webhook(webhook_definition(), [tag()]) :: ExAws.Operation.JSON.t()
+  def put_webhook(webhook_definition, tags \\ []) do
+    tags =
+      case Enum.empty?(tags) do
+        false -> Enum.map(tags, &keyword_to_map/1)
+        true -> []
+      end
+
+    %{webhook: keyword_to_map(webhook_definition), tags: tags}
     |> Utils.camelize_map()
     |> request(:put_webhook)
   end
