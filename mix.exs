@@ -53,7 +53,7 @@ defmodule ExAwsCodePipeline.MixProject do
   defp docs do
     [
       name: "ExAws.CodeDeploy",
-      canonical: "http://hexdocs.pm/ex_aws_code_deploy",
+      canonical: "http://hexdocs.pm/ex_aws_code_pipeline",
       source_url: @source_url,
       main: "readme",
       extras: ["README.md", "CHANGELOG.md": [title: "Changelog"], LICENSE: [title: "License"]]
