@@ -9,9 +9,9 @@ defmodule ExAws.CodePipeline do
   functions in the library may be helpful but it is merely helpful. It does not attempt to
   provide an explanation for how to use CodePipeline.
 
-  The library does not try to provide proection against invalid values, length restriction
+  The library does not try to provide protection against invalid values, length restriction
   violations, or violations of pattern matching defined in the API documentation. There is some
-  minimal checking for correct types but, generally, the data passed by app is converted to
+  minimal checking for correct types but, generally, the data passed by the app is converted to
   a JSON representation and the error will be returned by the API when it is called.
 
   Generally the functions take required parameters separately from any optional arguments. The
